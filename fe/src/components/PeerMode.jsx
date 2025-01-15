@@ -2,14 +2,14 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import PeerProgPage from "./PeerProgPage";
 import { io } from "socket.io-client";
 import socket from "./Socket";
-
+import { useAuth0 } from '@auth0/auth0-react';
 
 const PeerMode = () => {
   // const socket = useMemo(() => io("http://localhost:3000/"), []);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [roomid, setRoomid] = useState("");
-
+  const {user}=useAuth0();
   // Listen for incoming messages
   useEffect(() => {
     socket.on("receive-message", (message) => {
@@ -70,6 +70,8 @@ const PeerMode = () => {
                   alignSelf: msg.sender === socket.id ? "flex-end" : "flex-start",
                 }}
               >
+                <span style={{color:"black", fontWeight:"bolder"}}>{user.name}</span>
+<br />
                 {msg.text}
               </div>
             ))}

@@ -1,12 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
+import { useAuth0 } from '@auth0/auth0-react';
 const Mode = () => {
   const navigate = useNavigate();
-
+  const {user}=useAuth0()
   return (
     <>
-      <h1 style={{ marginTop:'2em' ,textAlign: "center", padding: "1em", color: "#463E7D" }}>
+    <div
+    style={{ position:'sticky', marginTop:'0px' ,marginLeft:'0px',textAlign: "center", padding: "1em", color: "#463E7D" }}
+    >Hello, {user.name}</div>
+      <h1 style={{ marginTop:'0em' ,textAlign: "center", padding: "1em", color: "#463E7D" }}>
         Mode Selection
       </h1>
 
