@@ -125,6 +125,7 @@ const styles = {
     gap: "20px",
   },
   chatSection: {
+    height:'200px',
     flex: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: "8px",
@@ -138,7 +139,7 @@ const styles = {
     marginBottom: "10px",
   },
   chatBox: {
-    maxHeight: "200px",
+    height: "200px",
     overflowY: "scroll",
     marginBottom: "10px",
     padding: "10px",
@@ -151,8 +152,13 @@ const styles = {
     borderRadius: "8px",
     padding: "8px 12px",
     margin: "5px 0",
-    maxWidth: "70%",
-  },
+    maxWidth: "0%",        // Max width won't exceed 70% of the parent container
+    minWidth: "fit-content", // Min width will adjust based on content
+    wordWrap: "break-word",  // Ensure wrapping of long words
+    whiteSpace: "normal",    // Allow text to wrap naturally
+    overflowWrap: "break-word", // Ensure overflowed text breaks into the next line
+  },  
+  
   chatForm: {
     display: "flex",
     gap: "10px",
