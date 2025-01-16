@@ -5,6 +5,8 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+
+
 const app = express();
 const API_PORT = 4444; // REST API port
 const SOCKET_PORT = 3000; // WebSocket server port
@@ -49,14 +51,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on("send-message", ({ message, roomid }) => {
+    socket.on("send-message", ({ message, roomid ,senderUserName}) => {
         if (socket.data.roomid === roomid) {
           const fullMessage = {
             text: message.text,
             sender: socket.id, // Include sender's ID
+            senderUserName,
           };
           socket.to(roomid).emit("receive-message", fullMessage); // Broadcast to other clients in the room
-          console.log(`Message sent in room ${roomid}:`, fullMessage);
+          console.log(`Message sended in room ${roomid}:`, fullMessage );
         } else {
           console.warn(`Socket ${socket.id} tried to send a message to an invalid room. ${roomid}`);
         }
