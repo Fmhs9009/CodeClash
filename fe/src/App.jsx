@@ -28,7 +28,7 @@ const App = () => {
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LoginPage />} />
-        <Route path="/mode/contest-mode/contest-page/:id" element={<ContestPage />} />
+        <Route path="/contest-mode/contest-page/:id" element={<ContestPage />} />
 
         {/* Protected Routes */}
         <Route

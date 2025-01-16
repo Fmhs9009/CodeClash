@@ -147,6 +147,14 @@ const ContestMode = () => {
     const [contestId, setContestId] = React.useState("");
     const [submissions, setSubmissions] = React.useState([]);
     const [error, setError] = React.useState("");
+
+    const [logic,setLogic] = React.useState("0");
+    const [efficiency,setEfficiecny] = React.useState("0");
+    const [codingStyle,setCodingStyle] = React.useState("0");
+    const [clarity,setClarity] = React.useState("0");
+
+
+
   
     const handleContestIdChange = (e) => {
       setContestId(e.target.value);
@@ -170,6 +178,12 @@ const ContestMode = () => {
         setError("Error fetching submissions.");
       }
     };
+
+    const submitFeedback = (e)=>{
+      e.preventDefault();
+      console.log("submitted feedback");
+      console.log(logic," ",efficiency," ",codingStyle," ",clarity, )
+    }
   
     return (
       <div style={{ padding: '30px', backgroundColor: '#f5f5f5', borderRadius: '12px', maxWidth: '600px', margin: '0 auto', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -244,7 +258,67 @@ const ContestMode = () => {
                 >
                   View Submission
                 </button>
+                {/* feedback form */}
+                <span>
+                <br />
+                  <p>Provide Feedback</p>
+                  <form onSubmit={submitFeedback}>
+                    <span>
+                      <label htmlFor="logic">Logic</label>
+                      <select id="logic" value={logic} onChange={(e) => setLogic(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="Efficiecny">Efficiecny</label>
+                      <select id="Efficiecny" value={efficiency} onChange={(e) => setEfficiecny(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="codingstyle">Coding Style</label>
+                      <select id="codingstyle" value={codingStyle} onChange={(e) => setCodingStyle(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="clarity">Clarity</label>
+                      <select id="clarity" value={clarity} onChange={(e) => setClarity(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      
+                      <div>
+                        <br />
+                        <button type="submit"> Submit Feedback</button>
+                      </div>
+                      </span>
+                  </form>
+                </span>
               </li>
+
             ))}
           </ul>
         ) : (
