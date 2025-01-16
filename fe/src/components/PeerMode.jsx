@@ -32,11 +32,14 @@ const PeerMode = () => {
   
       if (newMessage.trim() && roomid) {
         const message = { text: newMessage };
-        console.log("Sending message:", { message, roomid }); // Log message details
-        socket.emit("send-message", { message, roomid });
+        const senderUserName=user.name;
+        console.log("Sending message:", { message, roomid , senderUserName}); // Log message details
+        console.log("senderUserName:",user.name);
+       
+        socket.emit("send-message", { message, roomid ,senderUserName });
         setMessages((prevMessages) => [
           ...prevMessages,
-          { ...message, sender: socket.id },
+          { ...message, sender: socket.id,senderUserName },
         ]);
         setNewMessage(""); // This should clear the input
         console.log("Message sent and input cleared");
@@ -70,7 +73,7 @@ const PeerMode = () => {
                   alignSelf: msg.sender === socket.id ? "flex-end" : "flex-start",
                 }}
               >
-                <span style={{color:"black", fontWeight:"bolder"}}>{user.name}</span>
+                <span style={{color:"black", fontWeight:"bolder"}}>{msg.senderUserName || "Unknown User"}</span>
 <br />
                 {msg.text}
               </div>
