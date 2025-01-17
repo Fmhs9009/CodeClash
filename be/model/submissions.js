@@ -25,7 +25,28 @@ const submissionSchema = new Schema({
                 }
             }
         ],
-
+        feedback:{
+            
+            logic:{
+                type:String,
+            },
+            efficiency:{
+                type:String,
+            },
+            codingStyle:{
+                type:String
+            },
+            clarity:{
+                type:String
+            },
+            custom:{
+                type:String
+            },
+        
+        },
+        reviewedBy:{
+            type:String
+        },
         submittedAt:{
             type:Date,
             default:Date.now

@@ -1,6 +1,6 @@
 
 import Submission from "./../model/submissions.js"
-
+import { ObjectId } from "mongodb";
 
 const postCreateSubmission=async (req,res)=>{
 
@@ -22,6 +22,16 @@ const postCreateSubmission=async (req,res)=>{
     }
 
 }
+const postFeedback=async (req,res)=>{
+
+    const {subID,feedback,name}=req.body;
+
+    const sub=await Submission.updateOne({_id:new ObjectId(subID)},{
+        $set:{feedback:feedback},
+        $set:{reviewedBy:name}
+    })
+    res.send(sub);
+}
 
 const getGetSubmissions=async (req,res)=>{
 
@@ -37,4 +47,4 @@ catch(err){
     console.log("Failed to get details");
 }
 }
-export default {postCreateSubmission,getGetSubmissions}
+export default {postCreateSubmission,getGetSubmissions,postFeedback}
