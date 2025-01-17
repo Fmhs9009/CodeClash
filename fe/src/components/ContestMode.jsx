@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
 import axios from 'axios'
 import { useNavigate } from "react-router-dom";
-
+import { useAuth0 } from "@auth0/auth0-react";
 
 
 const ContestMode = () => {
+  const {user}= useAuth0();
   const navigate=useNavigate()
   const [action, setAction] = useState("");
   const [numQuestions, setNumQuestions] = useState(0);
@@ -147,6 +148,14 @@ const ContestMode = () => {
     const [contestId, setContestId] = React.useState("");
     const [submissions, setSubmissions] = React.useState([]);
     const [error, setError] = React.useState("");
+
+    const [logic,setLogic] = React.useState("0");
+    const [efficiency,setEfficiecny] = React.useState("0");
+    const [codingStyle,setCodingStyle] = React.useState("0");
+    const [clarity,setClarity] = React.useState("0");
+    const [custom,setCustom]=useState("")
+
+
   
     const handleContestIdChange = (e) => {
       setContestId(e.target.value);
@@ -169,8 +178,7 @@ const ContestMode = () => {
       } catch (err) {
         setError("Error fetching submissions.");
       }
-    };
-  
+    };  
     return (
       <div style={{ padding: '30px', backgroundColor: '#f5f5f5', borderRadius: '12px', maxWidth: '600px', margin: '0 auto', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
         {error && <p style={{ color: '#ff4d4f', fontWeight: 'bold', textAlign: 'center' }}>{error}</p>}
@@ -244,7 +252,81 @@ const ContestMode = () => {
                 >
                   View Submission
                 </button>
+                {/* feedback form */}
+                {/* {console.log(submissions[0].reviewedBy)} */}
+                {('reviewedBy' in submissions[0])?
+                <div>
+                  <p>Reviewd By:{submissions[0].reviewedBy}</p>
+                  <span>Logic:{submissions[0].feedback.logic} &nbsp;  Efficiency:{submissions[0].feedback.efficiency} &nbsp; Coding Style:{submissions[0].feedback.codingStyle} &nbsp; Clarity:{submissions[0].feedback.clarity}</span>
+                  <p>Additional Feedback {submissions[0].feedback.custom}</p>
+                </div>:(<div>
+                <br />
+                  <p>Provide Feedback</p>
+                  <form onSubmit={submitFeedback}>
+                    <span>
+                      <label htmlFor="logic">Logic</label>
+                      <select id="logic" value={logic} onChange={(e) => setLogic(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="Efficiecny">Efficiecny</label>
+                      <select id="Efficiecny" value={efficiency} onChange={(e) => setEfficiecny(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="codingstyle">Coding Style</label>
+                      <select id="codingstyle" value={codingStyle} onChange={(e) => setCodingStyle(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      </span>
+
+                      <span>
+                      <label htmlFor="clarity">Clarity</label>
+                      <select id="clarity" value={clarity} onChange={(e) => setClarity(e.target.value)}>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      <br />
+                      <input type="text" placeholder="Enter custom feedback here..." onBlur={(e)=>setCustom(e.target.value)}/>
+                      <div>
+                        <br />
+                        <button type="submit" onClick={async (e)=>{
+                          let subID=submission._id;
+                          e.preventDefault();
+                         await submitFeedback(subID,logic,efficiency,codingStyle,clarity,custom)
+
+                          fetchSubmissions()
+                        }}
+                          > Submit Feedback</button>
+                      </div>
+                      </span>
+                  </form>
+                </div>)}
               </li>
+
             ))}
           </ul>
         ) : (
@@ -255,6 +337,33 @@ const ContestMode = () => {
   };
   
 
+// Assuming this function is used to send feedback
+const submitFeedback = async (subID,logic,efficiency,codingStyle,clarity,custom) => {
+  const feedback = {
+      logic,
+      efficiency,
+      codingStyle,
+      clarity,
+      custom
+  };
+try {
+     await fetch('http://localhost:4444/feedback', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            subID,  // The ID of the submission you are updating
+            feedback: feedback,
+            name:user.name  // The reviewer’s name who is submitting the feedback
+        }),
+    });
+    alert("Feedback Submitted")
+  
+} catch (error) {
+  console.log(error);
+}
+};
 
 
 

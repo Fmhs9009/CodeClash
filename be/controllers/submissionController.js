@@ -27,8 +27,7 @@ const postFeedback=async (req,res)=>{
     const {subID,feedback,name}=req.body;
 
     const sub=await Submission.updateOne({_id:new ObjectId(subID)},{
-        $set:{feedback:feedback},
-        $set:{reviewedBy:name}
+        $set:{feedback:feedback, reviewedBy:name}
     })
     res.send(sub);
 }

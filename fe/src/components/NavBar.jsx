@@ -68,6 +68,7 @@ const styles = {
     display: 'flex',
     listStyle: 'none',
     margin: 0,
+    alignItems:'center',
     padding: 0,
     gap: '30px', // Increased gap for more breathing room
   },
