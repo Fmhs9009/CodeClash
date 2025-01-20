@@ -107,7 +107,25 @@ const ContestPage = () => {
     }
   };
 
-  if (!contestDetails || submissionDone) {
+  if (!contestDetails ) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontFamily: "Arial, sans-serif",
+          fontSize: "40px",
+          fontWeight: "bold",
+          color: "#6A5ACD",
+        }}
+      >
+        No contest found , <br />Please enter correct Contest ID and try again...
+      </div>
+    );
+  }
+  if (submissionDone) {
     return (
       <div
         style={{
@@ -183,7 +201,7 @@ const ContestPage = () => {
               Start Attempt
             </button>
           )}
-          <button
+          {attemptInProgress && (<button
             onClick={handleSubmit}
             style={{
               backgroundColor: "#6A5ACD",
@@ -199,6 +217,7 @@ const ContestPage = () => {
           >
             Submit
           </button>
+          )}
         </div>
 
         {/* Main Content - Questions and Answers */}
@@ -279,7 +298,7 @@ const ContestPage = () => {
                   border: "1px solid #ccc",
                   resize: "vertical",
                 }}
-                placeholder="Type your answer here..."
+                placeholder="Type your answer here... (please make sure to write the answer of which question you selected)"
               />
             </div>
           )}
