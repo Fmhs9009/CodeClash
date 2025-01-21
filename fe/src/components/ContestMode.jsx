@@ -169,9 +169,6 @@ const ContestMode = () => {
   
       try {
         const response = await fetch(`http://localhost:4444/getSubmission?id=${contestId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch submissions.");
-        }
         const data = await response.json();
         setSubmissions(data.data);
         setError(""); 
@@ -254,11 +251,11 @@ const ContestMode = () => {
                 </button>
                 {/* feedback form */}
                 {/* {console.log(submissions[0].reviewedBy)} */}
-                {('reviewedBy' in submissions[0])?
+                {('reviewedBy' in submission)?
                 <div>
                   <p>Reviewd By:{submissions[0].reviewedBy}</p>
-                  <span>Logic:{submissions[0].feedback.logic} &nbsp;  Efficiency:{submissions[0].feedback.efficiency} &nbsp; Coding Style:{submissions[0].feedback.codingStyle} &nbsp; Clarity:{submissions[0].feedback.clarity}</span>
-                  <p>Additional Feedback {submissions[0].feedback.custom}</p>
+                  <span>Logic:{submission.feedback.logic} &nbsp;  Efficiency:{submission.feedback.efficiency} &nbsp; Coding Style:{submission.feedback.codingStyle} &nbsp; Clarity:{submission.feedback.clarity}</span>
+                  <p>Additional Feedback {submission.feedback.custom}</p>
                 </div>:(<div>
                 <br />
                   <p>Provide Feedback</p>
