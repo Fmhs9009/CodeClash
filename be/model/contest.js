@@ -4,6 +4,11 @@ import { Schema } from "mongoose";
 
 const contestSchema=new Schema({
 
+    name :{
+        type:String,
+        required:true
+    },
+
     time:{
         type:Number,
         required:true
@@ -16,6 +21,11 @@ const contestSchema=new Schema({
 
     questions:{
         type:[String],
+        required:true
+    },
+
+    createdBy:{
+        type:String,
         required:true
     },
 

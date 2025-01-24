@@ -2,15 +2,13 @@ import React, { useCallback, useState } from "react";
 import axios from 'axios'
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
+import CreatedContests from "./CreatedContests";
 
 
 const ContestMode = () => {
   const {user}= useAuth0();
   const navigate=useNavigate()
   const [action, setAction] = useState("");
-  const [numQuestions, setNumQuestions] = useState(0);
-  const [time, setTime] = useState("");
-  const [questions, setQuestions] = useState([]);
   const [id,setId]= useState(0)
   const [attemptid,setAttemptid]=useState("")
   const [singleSubmissionDetails,setSingleSubmissionDetails]=useState("")
@@ -112,7 +110,7 @@ const ContestMode = () => {
     e.preventDefault();
     // alert(`Time: ${time} mins, Questions: ${questions.join(", ")}`);
 
-    if(!time || !numQuestions || !questions){
+    if(!name || !time || !numQuestions || !questions){
       alert("Any field cannot be blank")
     }
     else if(!(numQuestions>=1 && numQuestions<=10)){
@@ -121,9 +119,11 @@ const ContestMode = () => {
     else{
         console.log("axiioossssss");
         await axios.post("http://localhost:4444/createContest",{
+          name,
           time,
           numQuestions,
-          questions
+          questions,
+          createdBy:user.sub
         })      
         // .then((res)=>res.json())
         .then((res)=>{
@@ -449,11 +449,18 @@ try {
     );
   };
   
+function nameHandle(e){
+  setName(e.target.value)
+}
 
-
+  const [numQuestions, setNumQuestions] = useState(0);
+  const [time, setTime] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [name, setName]=useState("")
 
 
   const createContest = useCallback(() => (
+    
     <div
       style={{
         width: "90%",
@@ -478,6 +485,22 @@ try {
       </h4>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "1em" }}>
+        <label style={{ fontWeight: "bold", color: "#555" }}>
+            Name of the Contest:
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={nameHandle}
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+              marginTop: "5px",
+              outline: "none",
+            }}
+          />
           <label style={{ fontWeight: "bold", color: "#555" }}>
             Number of Questions:
           </label>
@@ -646,6 +669,7 @@ try {
           <option value="create-contest">Create a new contest</option>
           <option value="attempt-contest">Attempt a contest</option>
           <option value="view-submissions">View submissions</option>
+          <option value="created-contests">Created contests</option>
         </select>
       </div>
 
@@ -654,6 +678,7 @@ try {
       {action === "created" && contestCreated()}
       {action === "view-submissions" && <ContestSubmissions/>}
       {action === "view-single-submission" && viewSubmissionDetails(singleSubmissionDetails)}
+      {action === "created-contests" && <CreatedContests user={user}/>}
     </>
   );
 };
