@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { io } from "socket.io-client";
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript'; 
@@ -9,11 +9,12 @@ import socket from "./Socket"; //f
 
 
 
-const PeerProgPage = ({ setRoomid, roomid }) => {
+const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom }) => {
   // const socket = useMemo(() => io("http://localhost:3000/"), []);
   const [code, setCode] = useState("");
   // const [roomid, setRoomid] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const roomInputRef = useRef("");
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -41,6 +42,8 @@ const PeerProgPage = ({ setRoomid, roomid }) => {
     console.log("Joining room with ID:",roomid)
     socket.emit("join-room", roomid);
     console.log("Joined room", roomid);
+    setJoinedRoom(roomid);
+    roomInputRef.current.value = ""; 
   }, [socket, roomid]);
 
   const disconnectRoom = useCallback(() => {
@@ -69,6 +72,7 @@ const PeerProgPage = ({ setRoomid, roomid }) => {
           type="text"
           placeholder="Enter Room ID"
           value={roomid}
+          ref={roomInputRef}
           onChange={(e) => setRoomid(e.target.value)}
           style={styles.input}
         />

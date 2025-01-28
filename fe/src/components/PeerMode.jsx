@@ -9,6 +9,7 @@ const PeerMode = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [roomid, setRoomid] = useState("");
+  const [joinedRoom,setJoinedRoom] = useState("");
   const {user}=useAuth0();
   // Listen for incoming messages
   useEffect(() => {
@@ -63,7 +64,15 @@ const PeerMode = () => {
 
       <main style={styles.content}>
         <section style={styles.chatSection}>
-          <h2 style={styles.chatTitle}>Chat</h2>
+          <div style={styles.chatHeadingDiv}>
+            <h2 style={styles.chatTitle}>Chat</h2>
+            {joinedRoom && (
+              <div style={styles.roomInfo}>
+                <h2 style={styles.roomTitle}>Joined Room:</h2>
+                <p style={styles.roomId}>{joinedRoom}</p>
+              </div>
+            )}
+          </div>
           <div style={styles.chatBox}>
             {messages.map((msg, index) => (
               <div
@@ -94,7 +103,7 @@ const PeerMode = () => {
         </section>
 
         <section style={styles.actionSection}>
-          <PeerProgPage setRoomid={setRoomid} roomid={roomid} />
+          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom}/>
         </section>
       </main>
     </div>
@@ -129,6 +138,12 @@ const styles = {
     flexDirection: "column",
     gap: "20px",
   },
+  chatHeadingDiv: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%", 
+  },
   chatSection: {
     height:'200px',
     flex: 1,
@@ -139,8 +154,9 @@ const styles = {
     marginBottom: "20px",
   },
   chatTitle: {
-    fontSize: "24px",
+    fontSize: "1.7vw",
     color: "#463E7D",
+    fontWeight: "bold",
     marginBottom: "10px",
   },
   chatBox: {
@@ -189,6 +205,25 @@ const styles = {
     padding: "20px",
     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
   },
+  roomInfo: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "2%", 
+    width: "100%", 
+    marginBottom: "10px",
+  },
+  roomTitle: {
+    fontWeight: "bold",
+    color: "#463E7D",
+    margin: "0",
+    fontSize: "1.7vw", 
+  },
+  roomId: {
+    fontSize: "1.7vw", 
+    color: "#6B7280",
+    margin: "0",
+  },
+  
 };
 
 export default PeerMode;
