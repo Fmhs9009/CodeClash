@@ -671,6 +671,8 @@ function nameHandle(e){
           <option value="view-submissions">View submissions</option>
           <option value="created-contests">Created contests</option>
         </select>
+
+
       </div>
 
       {action === "create-contest" && createContest()}
