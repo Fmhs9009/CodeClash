@@ -4,12 +4,16 @@ import { io } from "socket.io-client";
 import socket from "./Socket";
 import { useAuth0 } from '@auth0/auth0-react';
 
+
 const PeerMode = () => {
   // const socket = useMemo(() => io("http://localhost:3000/"), []);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [roomid, setRoomid] = useState("");
   const [joinedRoom,setJoinedRoom] = useState("");
+
+const [stdinput,setStdinput] = useState("");
+
   const {user}=useAuth0();
   // Listen for incoming messages
   useEffect(() => {
@@ -101,10 +105,17 @@ const PeerMode = () => {
             </button>
           </form>
         </section>
-
-        <section style={styles.actionSection}>
-          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom}/>
+            
+        <section>
+          <div>
+            <h2>Input</h2>
+          </div>              
+          <textarea name='inputArea'  cols="30" placeholder="Enter Input Text here" value={stdinput} onChange={(e) => setStdinput(e.target.value)}/>
         </section>
+        <section style={styles.actionSection}>
+          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom} stdinput={stdinput}/>
+        </section>
+
       </main>
     </div>
   );
