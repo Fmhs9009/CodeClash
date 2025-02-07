@@ -51,6 +51,18 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('update-input', ({ inputValue, roomid}) => {
+        if (socket.data.roomid === roomid) {
+            socket.to(roomid).emit('send-input', inputValue);
+        }
+    });
+
+    socket.on('update-output', ({ outputVal, roomid}) => {
+        if (socket.data.roomid === roomid) {
+            socket.to(roomid).emit('send-output', outputVal);
+        }
+    });
+
     socket.on("send-message", ({ message, roomid ,senderUserName}) => {
         if (socket.data.roomid === roomid) {
           const fullMessage = {

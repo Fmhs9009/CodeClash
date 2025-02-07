@@ -20,7 +20,11 @@ const [stdinput,setStdinput] = useState("");
     socket.on("receive-message", (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
-  
+
+    socket.on("send-input", (inputValue) => {
+      setStdinput(inputValue);
+    });
+
     return () => {
       socket.off("receive-message");
     };
@@ -55,6 +59,12 @@ const [stdinput,setStdinput] = useState("");
     [socket, newMessage, roomid]
   );
   
+  const updateInput = useCallback((inputValue) => {
+    setStdinput(inputValue);
+    if (roomid !== "") {
+      socket.emit("update-input", { inputValue, roomid });
+    }
+  }, [roomid]);
   
 
   return (
@@ -110,7 +120,7 @@ const [stdinput,setStdinput] = useState("");
           <div>
             <h2>Input</h2>
           </div>              
-          <textarea name='inputArea'  cols="30" placeholder="Enter Input Text here" value={stdinput} onChange={(e) => setStdinput(e.target.value)}/>
+          <textarea name='inputArea'  cols="30" placeholder="Enter Input Text here" value={stdinput} onChange={(e) => updateInput(e.target.value)}/>
         </section>
         <section style={styles.actionSection}>
           <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom} stdinput={stdinput}/>

@@ -24,6 +24,10 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
       setCode(NewCode);
     });
 
+    socket.on("send-output", (outputVal) => {
+      setStdOutput(outputVal);
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -70,10 +74,13 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
       const result = await createSubmission(id, code, stdinput.trim() !== "" ? stdinput : null);
       
       if (result && result.output) {
-        setStdOutput(result.output); 
-      } else {
-        setStdOutput("Error: No output received.");
-      }
+        setStdOutput(result.output);
+
+        if (roomid !== "") socket.emit("update-output",{outputVal:result.output,roomid}); 
+      } 
+      // else {
+      //   setStdOutput("Error: No output received.");
+      // }
     } catch (error) {
       console.error("Execution error:", error);
       setStdOutput("Error executing code.");
@@ -106,6 +113,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
           ref={roomInputRef}
           onChange={(e) => setRoomid(e.target.value)}
           style={styles.input}
+          readOnly={isRoomJoined}
         />
     
         {!isRoomJoined ? (
