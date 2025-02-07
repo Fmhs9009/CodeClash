@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { io } from "socket.io-client";
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript'; 
 import { python } from '@codemirror/lang-python'; 
@@ -8,16 +7,14 @@ import { java } from '@codemirror/lang-java';
 import socket from "./Socket"; 
 import createSubmission from './CodeExecution';
 
-
-const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom ,stdinput}) => {
-  // const socket = useMemo(() => io("http://localhost:3000/"), []);
+const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }) => {
   const [code, setCode] = useState("");
-  // const [roomid, setRoomid] = useState("");
   const [language, setLanguage] = useState("javascript");
   const roomInputRef = useRef("");
-  const [isRoomJoined,setIsRoomJoined] = useState(false);
-  const [id,setId]=useState(0);
+  const [isRoomJoined, setIsRoomJoined] = useState(false);
+  const [id, setId] = useState(0);
   const [stdOutput, setStdOutput] = useState("");
+
   useEffect(() => {
     socket.on("connect", () => {
       console.log(socket.id); 
@@ -30,49 +27,45 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom ,stdinput}
     return () => {
       socket.disconnect();
     };
-  }, [socket]);
+  }, []);
 
   const updateCode = useCallback((NewCode) => {
     setCode(NewCode);
     if (roomid !== "") {
       socket.emit("update-code", { NewCode, roomid });
     }
-  }, [socket, roomid]);
+  }, [roomid]);
 
   const joinRoom = useCallback((e) => {
     e.preventDefault();
-    if (roomid.trim() == "") return; // Prevent joining an empty room
-  
+    if (roomid.trim() === "") return; 
+
     console.log("Joining room with ID:", roomid);
     socket.emit("join-room", roomid);
-  
+
     setJoinedRoom(roomid); 
     setIsRoomJoined(true);
-  
-    // Keep the input field empty after joining
     roomInputRef.current.value = "";  
-  }, [socket, roomid]);
-  
+  }, [roomid]);
 
   const disconnectRoom = useCallback(() => {
-    if (joinedRoom !== "") { // Check joinedRoom instead of roomid
+    if (joinedRoom !== "") { 
       console.log("Disconnecting from room:", joinedRoom);
       socket.emit("disconnect-room", joinedRoom);
-  
-      // Update states in the correct order
+
       setIsRoomJoined(false); 
-      setJoinedRoom("");  // Reset the joined room
-      setRoomid("");      // Reset the room ID
-  
+      setJoinedRoom("");  
+      setRoomid("");      
+
       if (roomInputRef.current) {
-        roomInputRef.current.value = ""; // Reset input field
+        roomInputRef.current.value = ""; 
       }
     }
-  }, [socket, joinedRoom, setRoomid, setJoinedRoom]);
-  
+  }, [joinedRoom]);
+
   const runCode = useCallback(async () => {
     if (code.trim() === "") return;
-    // console.log(stdinput);
+
     try {
       const result = await createSubmission(id, code, stdinput.trim() !== "" ? stdinput : null);
       
@@ -104,7 +97,6 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom ,stdinput}
   }, [language]);
 
   return (
-    <>
     <div style={styles.container}>
       <form style={styles.form} onSubmit={joinRoom}>
         <input
@@ -121,7 +113,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom ,stdinput}
           ) : (
           <button type="button" onClick={disconnectRoom} style={styles.disconnectButton}>Disconnect</button>
         )}
-          <button type="button" onClick={runCode} style={styles.disconnectButton}>Run Code</button>
+        <button type="button" onClick={runCode} style={styles.runButton}>Run Code</button>
       </form>
 
       <select
@@ -142,15 +134,11 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom , joinedRoom ,stdinput}
         style={styles.codeEditor}
       />
 
-        <br />
+      <div style={styles.outputContainer}>
+        <h2 style={styles.outputHeader}>Output</h2>
+        <textarea name="outputArea" value={stdOutput} readOnly style={styles.outputArea}></textarea>
+      </div>
     </div>
-    <div>
-      <section>
-          <div><h2>Output</h2></div>
-          <textarea name="outputArea" cols="30" value={stdOutput} readOnly></textarea>
-      </section>
-    </div>
-    </>
   );
 };
 
@@ -167,43 +155,85 @@ const styles = {
     alignItems: "center",
     gap: "10px",
     marginBottom: "20px",
+    justifyContent: "center",
   },
   input: {
     padding: "10px",
     fontSize: "16px",
-    border: "1px solid #E5E7EB",
-    borderRadius: "4px",
-    flex: 1,
+    border: "2px solid #463E7D",
+    borderRadius: "6px",
+    outline: "none",
+    transition: "0.3s",
   },
   button: {
     padding: "10px 20px",
     backgroundColor: "#463E7D",
     color: "#FFFFFF",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "6px",
     cursor: "pointer",
     fontWeight: "bold",
+    transition: "0.3s",
   },
   disconnectButton: {
     backgroundColor: "#FF4D4D",
     color: "#FFFFFF",
-    borderRadius: "4px",
+    borderRadius: "6px",
     padding: "10px 20px",
     fontWeight: "bold",
     cursor: "pointer",
+    transition: "0.3s",
+  },
+  runButton: {
+    backgroundColor: "#28A745",
+    color: "#FFFFFF",
+    borderRadius: "6px",
+    padding: "10px 20px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "0.3s",
   },
   select: {
     width: "100%",
     padding: "10px",
     fontSize: "16px",
-    borderRadius: "4px",
-    border: "1px solid #E5E7EB",
+    borderRadius: "6px",
+    border: "2px solid #463E7D",
+    backgroundColor: "#FFF",
     marginBottom: "20px",
   },
   codeEditor: {
     height: "auto",
     borderRadius: "8px",
-    border: "1px solid #E5E7EB",
+    border: "2px solid #463E7D",
+    padding: "10px",
+    backgroundColor: "#FFF",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+  },
+  outputContainer: {
+    marginTop: "20px",
+    padding: "15px",
+    backgroundColor: "#FFFFFF",
+    borderRadius: "8px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    border: "2px solid #463E7D",
+  },
+  outputHeader: {
+    fontSize: "18px",
+    fontWeight: "bold",
+    marginBottom: "10px",
+    color: "#463E7D",
+  },
+  outputArea: {
+    width: "100%",
+    minHeight: "100px",
+    borderRadius: "6px",
+    padding: "10px",
+    fontSize: "16px",
+    border: "2px solid #463E7D",
+    backgroundColor: "#F5F5F5",
+    color: "#333",
+    resize: "none",
   },
 };
 
