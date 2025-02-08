@@ -7,13 +7,14 @@ import { java } from '@codemirror/lang-java';
 import socket from "./Socket"; 
 import createSubmission from './CodeExecution';
 
-const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }) => {
+const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom}) => {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const roomInputRef = useRef("");
   const [isRoomJoined, setIsRoomJoined] = useState(false);
   const [id, setId] = useState(0);
   const [stdOutput, setStdOutput] = useState("");
+  const [stdinput,setStdinput] = useState("");
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -22,6 +23,10 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
 
     socket.on("send-code", (NewCode) => {
       setCode(NewCode);
+    });
+
+    socket.on("send-input", (inputValue) => {
+      setStdinput(inputValue);
     });
 
     socket.on("send-output", (outputVal) => {
@@ -87,6 +92,13 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
     }
   }, [code, id, stdinput]);
 
+  const updateInput = useCallback((inputValue) => {
+    setStdinput(inputValue);
+    if (roomid !== "") {
+      socket.emit("update-input", { inputValue, roomid });
+    }
+  }, [roomid]);
+
   const SetLanguage = useMemo(() => {
     if (language === 'python') {
       setId(92);
@@ -101,6 +113,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
       setId(93);
       return javascript();
     }
+    
   }, [language]);
 
   return (
@@ -142,6 +155,13 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom, stdinput }
         style={styles.codeEditor}
       />
 
+      <div>
+        <div>
+          <h2>Input</h2>
+        </div>              
+        <textarea name='inputArea'  cols="30" placeholder="Enter Input Text here" value={stdinput} onChange={(e) => updateInput(e.target.value)}/>
+      </div>
+        
       <div style={styles.outputContainer}>
         <h2 style={styles.outputHeader}>Output</h2>
         <textarea name="outputArea" value={stdOutput} readOnly style={styles.outputArea}></textarea>

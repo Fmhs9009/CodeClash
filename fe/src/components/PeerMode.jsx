@@ -12,17 +12,13 @@ const PeerMode = () => {
   const [roomid, setRoomid] = useState("");
   const [joinedRoom,setJoinedRoom] = useState("");
 
-const [stdinput,setStdinput] = useState("");
+
 
   const {user}=useAuth0();
   // Listen for incoming messages
   useEffect(() => {
     socket.on("receive-message", (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
-    });
-
-    socket.on("send-input", (inputValue) => {
-      setStdinput(inputValue);
     });
 
     return () => {
@@ -59,12 +55,7 @@ const [stdinput,setStdinput] = useState("");
     [socket, newMessage, roomid]
   );
   
-  const updateInput = useCallback((inputValue) => {
-    setStdinput(inputValue);
-    if (roomid !== "") {
-      socket.emit("update-input", { inputValue, roomid });
-    }
-  }, [roomid]);
+ 
   
 
   return (
@@ -116,14 +107,8 @@ const [stdinput,setStdinput] = useState("");
           </form>
         </section>
             
-        <section>
-          <div>
-            <h2>Input</h2>
-          </div>              
-          <textarea name='inputArea'  cols="30" placeholder="Enter Input Text here" value={stdinput} onChange={(e) => updateInput(e.target.value)}/>
-        </section>
         <section style={styles.actionSection}>
-          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom} stdinput={stdinput}/>
+          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom} />
         </section>
 
       </main>
