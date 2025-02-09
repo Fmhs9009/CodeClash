@@ -63,6 +63,11 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("update-language", ({ language, roomid }) => {
+        console.log(`Language updated to ${language} in room ${roomid}`);
+        socket.to(roomid).emit("send-language", language);
+      });
+
     socket.on("send-message", ({ message, roomid ,senderUserName}) => {
         if (socket.data.roomid === roomid) {
           const fullMessage = {
