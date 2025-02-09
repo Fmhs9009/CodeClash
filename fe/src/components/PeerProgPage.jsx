@@ -9,7 +9,7 @@ import createSubmission from './CodeExecution';
 
 const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("");
   const [isRoomJoined, setIsRoomJoined] = useState(false);
   const [id, setId] = useState(0);
   const [stdOutput, setStdOutput] = useState("");
@@ -21,11 +21,14 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
     socket.on("send-code", (NewCode) => setCode(NewCode));
     socket.on("send-input", (inputValue) => setStdInput(inputValue));
     socket.on("send-output", (outputVal) => setStdOutput(outputVal));
+    socket.on("send-language", (newLanguage) => setLanguage(newLanguage));
+    
 
     return () => {
       socket.off("send-code");
       socket.off("send-input");
       socket.off("send-output");
+      socket.off("send-language");
     };
   }, []);
 
@@ -36,7 +39,10 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
 
   const joinRoom = useCallback((e) => {
     e.preventDefault();
-    if (roomid.trim() === "") return;
+    if (roomid.trim() === "") {
+      alert('Pls enter a room id')
+      return;
+    }
 
     console.log("Joining room:", roomid);
     socket.emit("join-room", roomid);
@@ -46,6 +52,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   }, [roomid]);
 
   const disconnectRoom = useCallback(() => {
+    
     if (!joinedRoom) return;
 
     console.log("Disconnecting from room:", joinedRoom);
@@ -58,7 +65,10 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
 
   const runCode = useCallback(async () => {
     if (code.trim() === "") return;
-
+    if (language === '') {
+      alert('Pls choose ur language');
+      return;
+    }
     try {
       const result = await createSubmission(id, code, stdInput.trim() !== "" ? stdInput : null);
 
@@ -77,12 +87,30 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
     if (roomid !== "") socket.emit("update-input", { inputValue, roomid });
   }, [roomid]);
 
+  const updateLang = useCallback((newLang) => {
+    setLanguage(newLang);
+    let newId;
+  
+    switch (newLang) {
+      case "python": newId = 92; break;
+      case "cpp": newId = 54; break;
+      case "java": newId = 91; break;
+      case "javascript": newId = 93; break;
+      default: newId = null; // No default
+    }
+    setId(newId);
+  
+    if (roomid !== "") socket.emit("update-language", { language: newLang, roomid });
+  }, [roomid]);
   const SetLanguage = useMemo(() => {
+    if (!language) return []; // Prevent undefined errors in CodeMirror
+  
     switch (language) {
-      case 'python': setId(92); return python();
-      case 'cpp': setId(54); return cpp();
-      case 'java': setId(91); return java();
-      default: setId(93); return javascript();
+      case 'python': return [python()];
+      case 'cpp': return [cpp()];
+      case 'java': return [java()];
+      case 'javascript': return [javascript()];
+      default: return []; // Prevent errors
     }
   }, [language]);
 
@@ -100,7 +128,8 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
           readOnly={isRoomJoined}
         />
 
-        <select value={language} onChange={(e) => setLanguage(e.target.value)} style={styles.select}>
+        <select value={language} onChange={(e) => updateLang(e.target.value)} style={styles.select}>
+          <option value="">Select your language</option>
           <option value="javascript">JavaScript</option>
           <option value="python">Python</option>
           <option value="cpp">C++</option>
@@ -110,14 +139,21 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
         {!isRoomJoined ? (
           <button type="submit" style={styles.button}>Join</button>
         ) : (
-          <button type="button" onClick={disconnectRoom} style={styles.disconnectButton}>Disconnect</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); disconnectRoom(); }} style={styles.disconnectButton}>Disconnect</button>
         )}
         <button type="button" onClick={runCode} style={styles.runButton}>Run Code</button>
       </form>
 
       {/* Code Editor */}
-      <div style={styles.codeEditor}>
+      {/* <div style={styles.codeEditor}>
         <h1>Code Here⤵</h1>
+        <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
+      </div> */}
+      <div style={styles.codeEditor}>
+        <h2 style={{
+      color: "#463E7D",
+      fontWeight: "bold",
+      marginBottom: "10px",}}>Code Here⤵</h2>
         <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
       </div>
       
