@@ -116,7 +116,11 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
       </form>
 
       {/* Code Editor */}
-      <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
+      <div style={styles.codeEditor}>
+        <h1>Code Here⤵</h1>
+        <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
+      </div>
+      
 
       {/* IO Container: Input Left, Output Right */}
       <div style={styles.ioContainer}>
