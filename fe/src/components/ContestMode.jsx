@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import axios from 'axios'
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -12,6 +12,32 @@ const ContestMode = () => {
   const [id,setId]= useState(0)
   const [attemptid,setAttemptid]=useState("")
   const [singleSubmissionDetails,setSingleSubmissionDetails]=useState("")
+  const [availableContests, setAvailableContests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (action === "attempt-contest") {
+      const fetchContests = async () => {
+        try {
+          const response = await fetch("http://localhost:4444/getAllContests");
+          const data = await response.json();
+          if (response.ok) {
+            setAvailableContests(data.data);
+            setError("");
+          } else {
+            setError(data.msg || "Failed to fetch contests");
+          }
+        } catch (err) {
+          setError("Error fetching contests");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchContests();
+    }
+  }, [action]);
 
   const handleActionChange = (e) => {
     setAction(e.target.value);
@@ -39,63 +65,55 @@ const ContestMode = () => {
   };
 
 
-  const contestCreated=()=>{
-
-   return <div
-    style={{
-      width: "90%",
-      maxWidth: "400px",
-      margin: "2em auto",
-      padding: "1.5em",
-      backgroundColor: "#F9F9FF",
-      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-      borderRadius: "10px",
-      fontFamily: "Arial, sans-serif",
-    }}
-  >
-
-    <h2
-      style={{
-        textAlign: "center",
-        marginBottom: "1em",
-        color: "#463E7D",
-        fontWeight: "bold",
-      }}
-    >
-      New Contest Created
-    </h2>
-
-    <div style={{ marginBottom: "1em" }}>
-      <label style={{ fontWeight: "bold", color: "#555" }}>Contest ID:</label>
-      <span style={{
-          width: "100%",
-          padding: "8px",
-          border: "1px solid #ddd",
-          borderRadius: "5px",
-          marginTop: "5px",
-          outline: "none",
-        }} >
-          {id}
-      </span>
-
-        <button 
-          type="submit"
+  const contestCreated = () => {
+    return (
+      <div
+        style={{
+          width: "90%",
+          maxWidth: "400px",
+          margin: "2em auto",
+          padding: "1.5em",
+          backgroundColor: "#F9F9FF",
+          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+          borderRadius: "10px",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <h2
           style={{
-            width: "100%",
-            marginTop:'1em',
-            padding: "10px 15px",
-            backgroundColor: "#463E7D",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
+            textAlign: "center",
+            marginBottom: "1em",
+            color: "#463E7D",
             fontWeight: "bold",
-            cursor: "pointer",
-            transition: "background-color 0.3s ease",
           }}
-        onClick={handleCopy}>Copy</button>
-    </div >
-  </div >
-}
+        >
+          New Contest Created Successfully!
+        </h2>
+
+        <div style={{ textAlign: "center" }}>
+          <p style={{ marginBottom: "1em", color: "#555" }}>
+            Your contest has been created and is now available for participants.
+          </p>
+          <button
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#463E7D",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#6A5ACD")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#463E7D")}
+            onClick={() => setAction("created-contests")}
+          >
+            View Created Contests
+          </button>
+        </div>
+      </div>
+    );
+  };
 
 
   const handleCopy=()=>{
@@ -145,189 +163,187 @@ const ContestMode = () => {
 
 
   const ContestSubmissions = () => {
-    const [contestId, setContestId] = React.useState("");
-    const [submissions, setSubmissions] = React.useState([]);
-    const [error, setError] = React.useState("");
+    const [contests, setContests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selectedContest, setSelectedContest] = useState(null);
+    const [submissions, setSubmissions] = useState([]);
+    const [showSubmissions, setShowSubmissions] = useState(false);
 
-    const [logic,setLogic] = React.useState("0");
-    const [efficiency,setEfficiecny] = React.useState("0");
-    const [codingStyle,setCodingStyle] = React.useState("0");
-    const [clarity,setClarity] = React.useState("0");
-    const [custom,setCustom]=useState("")
+    // Fetch all contests
+    useEffect(() => {
+      const fetchContests = async () => {
+        try {
+          const response = await fetch("http://localhost:4444/getAllContests");
+          const data = await response.json();
+          if (response.ok) {
+            setContests(data.data);
+            setError("");
+          } else {
+            setError(data.msg || "Failed to fetch contests");
+          }
+        } catch (err) {
+          setError("Error fetching contests");
+        } finally {
+          setLoading(false);
+        }
+      };
 
+      fetchContests();
+    }, []);
 
-  
-    const handleContestIdChange = (e) => {
-      setContestId(e.target.value);
-    };
-  
-    const fetchSubmissions = async () => {
-      if (!contestId) {
-        setError("Please enter a contest ID.");
-        return;
-      }
-  
+    // Fetch submissions for a specific contest
+    const fetchSubmissions = async (contestId) => {
       try {
         const response = await fetch(`http://localhost:4444/getSubmission?id=${contestId}`);
         const data = await response.json();
-        setSubmissions(data.data);
-        setError(""); 
+        if (response.ok) {
+          setSubmissions(data.data);
+          setShowSubmissions(true);
+        } else {
+          setError(data.msg || "Failed to fetch submissions");
+        }
       } catch (err) {
-        setError("Error fetching submissions.");
+        setError("Error fetching submissions");
       }
-    };  
-    return (
-      <div style={{ padding: '30px', backgroundColor: '#f5f5f5', borderRadius: '12px', maxWidth: '600px', margin: '0 auto', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-        {error && <p style={{ color: '#ff4d4f', fontWeight: 'bold', textAlign: 'center' }}>{error}</p>}
-  
-        <h3 style={{ color: '#463e7d', textAlign: 'center', marginBottom: '20px' }}>Enter Contest ID to View Submissions</h3>
-  
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-          <input
-            type="text"
-            value={contestId}
-            onChange={handleContestIdChange}
-            placeholder="Enter Contest ID"
-            style={{ 
-              padding: '10px', 
-              borderRadius: '8px', 
-              border: '1px solid #ccc', 
-              width: '250px', 
-              fontSize: '14px' 
-            }}
-          />
-          <button
-            onClick={fetchSubmissions}
-            style={{
-              backgroundColor: '#463e7d',
-              color: '#fff',
-              padding: '10px 15px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              marginLeft: '10px',
-              fontSize: '14px',
-            }}
-          >
-            View Submissions
-          </button>
+    };
+
+    if (loading) {
+      return (
+        <div style={{ textAlign: "center", padding: "2em" }}>
+          Loading contests...
         </div>
-  
-        {submissions.length > 0 ? (
-          <ul style={{ listStyleType: 'none', padding: '0', marginTop: '20px' }}>
-            {submissions.map(submission => (
-              <li
-                key={submission._id}
-                style={{
-                  backgroundColor: '#fff',
-                  padding: '15px',
-                  marginBottom: '15px',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <p style={{ marginBottom: '8px', fontSize: '14px', color: '#333' }}>
-                  <strong>Submission ID:</strong> {submission._id}
-                </p>
-                <p style={{ marginBottom: '8px', fontSize: '14px', color: '#333' }}>
-                  <strong>Submitted At:</strong> {new Date(submission.submittedAt).toLocaleString()}
-                </p>
-                <button
+      );
+    }
+
+    if (error) {
+      return (
+        <div style={{ color: "red", textAlign: "center", padding: "2em" }}>
+          {error}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ padding: "30px", maxWidth: "800px", margin: "0 auto" }}>
+        <h2 style={{ color: "#463E7D", textAlign: "center", marginBottom: "1.5em" }}>
+          Contest Submissions
+        </h2>
+
+        {!showSubmissions ? (
+          // Show contest list
+          <div className="contest-list">
+            {contests.length === 0 ? (
+              <div style={{ textAlign: "center" }}>No contests available</div>
+            ) : (
+              contests.map((contest) => (
+                <div
+                  key={contest._id}
                   style={{
-                    backgroundColor: '#463e7d',
-                    color: '#fff',
-                    padding: '8px 12px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                  }}
-                  onClick={() =>{
-                    setSingleSubmissionDetails(submission)
-                    setAction("view-single-submission")
+                    padding: "1.5em",
+                    marginBottom: "1em",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    backgroundColor: "white",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                   }}
                 >
-                  View Submission
-                </button>
-                {/* feedback form */}
-                {/* {console.log(submissions[0].reviewedBy)} */}
-                {('reviewedBy' in submission)?
-                <div>
-                  <p>Reviewd By:{submissions[0].reviewedBy}</p>
-                  <span>Logic:{submission.feedback.logic} &nbsp;  Efficiency:{submission.feedback.efficiency} &nbsp; Coding Style:{submission.feedback.codingStyle} &nbsp; Clarity:{submission.feedback.clarity}</span>
-                  <p>Additional Feedback {submission.feedback.custom}</p>
-                </div>:(<div>
-                <br />
-                  <p>Provide Feedback</p>
-                  <form onSubmit={submitFeedback}>
-                    <span>
-                      <label htmlFor="logic">Logic</label>
-                      <select id="logic" value={logic} onChange={(e) => setLogic(e.target.value)}>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
-                      </span>
-
-                      <span>
-                      <label htmlFor="Efficiecny">Efficiecny</label>
-                      <select id="Efficiecny" value={efficiency} onChange={(e) => setEfficiecny(e.target.value)}>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
-                      </span>
-
-                      <span>
-                      <label htmlFor="codingstyle">Coding Style</label>
-                      <select id="codingstyle" value={codingStyle} onChange={(e) => setCodingStyle(e.target.value)}>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
-                      </span>
-
-                      <span>
-                      <label htmlFor="clarity">Clarity</label>
-                      <select id="clarity" value={clarity} onChange={(e) => setClarity(e.target.value)}>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
-                      <br />
-                      <input type="text" placeholder="Enter custom feedback here..." onBlur={(e)=>setCustom(e.target.value)}/>
-                      <div>
-                        <br />
-                        <button type="submit" onClick={async (e)=>{
-                          let subID=submission._id;
-                          e.preventDefault();
-                         await submitFeedback(subID,logic,efficiency,codingStyle,clarity,custom)
-
-                          fetchSubmissions()
-                        }}
-                          > Submit Feedback</button>
-                      </div>
-                      </span>
-                  </form>
-                </div>)}
-              </li>
-
-            ))}
-          </ul>
+                  <h3 style={{ color: "#463E7D", marginBottom: "0.5em" }}>
+                    {contest.name}
+                  </h3>
+                  <p style={{ marginBottom: "0.5em" }}>
+                    <strong>Duration:</strong> {contest.time} minutes
+                  </p>
+                  <p style={{ marginBottom: "0.5em" }}>
+                    <strong>Questions:</strong> {contest.numQuestions}
+                  </p>
+                  <button
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#463E7D",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      transition: "background-color 0.3s ease",
+                    }}
+                    onMouseOver={(e) => (e.target.style.backgroundColor = "#6A5ACD")}
+                    onMouseOut={(e) => (e.target.style.backgroundColor = "#463E7D")}
+                    onClick={() => {
+                      setSelectedContest(contest);
+                      fetchSubmissions(contest._id);
+                    }}
+                  >
+                    View Submissions
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         ) : (
-          <p style={{ fontSize: '16px', color: '#333', textAlign: 'center' }}>No submissions available.</p>
+          // Show submissions for selected contest
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1em" }}>
+              <h3 style={{ color: "#463E7D" }}>
+                Submissions for {selectedContest.name}
+              </h3>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#6c757d",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setShowSubmissions(false);
+                  setSelectedContest(null);
+                  setSubmissions([]);
+                }}
+              >
+                Back to Contests
+              </button>
+            </div>
+
+            {submissions.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "2em" }}>
+                No submissions found for this contest
+              </div>
+            ) : (
+              <div className="submissions-list">
+                {submissions.map((submission, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "1em",
+                      marginBottom: "1em",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      backgroundColor: "white",
+                    }}
+                  >
+                    <p><strong>User:</strong> {submission.userName}</p>
+                    <p><strong>Submission Time:</strong> {new Date(submission.submittedAt).toLocaleString()}</p>
+                    <p><strong>Score:</strong> {submission.score || "Not evaluated"}</p>
+                    <button
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#463E7D",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => viewSubmissionDetails(submission)}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
@@ -352,7 +368,7 @@ try {
         body: JSON.stringify({
             subID,  // The ID of the submission you are updating
             feedback: feedback,
-            name:user.name  // The reviewer’s name who is submitting the feedback
+            name:user.name  // The reviewer's name who is submitting the feedback
         }),
     });
     alert("Feedback Submitted")
@@ -588,7 +604,7 @@ function nameHandle(e){
     <div
       style={{
         width: "90%",
-        maxWidth: "400px",
+        maxWidth: "800px",
         margin: "2em auto",
         padding: "1.5em",
         backgroundColor: "#F9F9FF",
@@ -605,45 +621,60 @@ function nameHandle(e){
           fontWeight: "bold",
         }}
       >
-        Attempt a Contest
+        Available Contests
       </h2>
-      <div style={{ marginBottom: "1em" }}>
-        <label style={{ fontWeight: "bold", color: "#555" }}>Contest ID:</label>
-        <input
-          type="text"
-          value={attemptid}
-          onChange={(e)=>setAttemptid(e.target.value)}
-          placeholder="Enter Contest ID here"
-          style={{
-            width: "100%",
-            padding: "8px",
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            marginTop: "5px",
-            outline: "none",
-          }}
-        />
-      </div>
-      <button
-        style={{
-          width: "100%",
-          padding: "10px 15px",
-          backgroundColor: "#463E7D",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          transition: "background-color 0.3s ease",
-        }}
-        onMouseOver={(e) => (e.target.style.backgroundColor = "#6A5ACD")}
-        onMouseOut={(e) => (e.target.style.backgroundColor = "#463E7D")}
-        onClick={() => navigate(`/contest-mode/contest-page/${attemptid}`)}
-        >
-        Submit
-      </button>
+
+      {loading ? (
+        <div style={{ textAlign: "center" }}>Loading contests...</div>
+      ) : error ? (
+        <div style={{ color: "red", textAlign: "center" }}>{error}</div>
+      ) : availableContests.length === 0 ? (
+        <div style={{ textAlign: "center" }}>No contests available</div>
+      ) : (
+        <div className="contest-list">
+          {availableContests.map((contest) => (
+            <div
+              key={contest._id}
+              style={{
+                padding: "1em",
+                marginBottom: "1em",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                backgroundColor: "white",
+              }}
+            >
+              <h3 style={{ color: "#463E7D", marginBottom: "0.5em" }}>
+                {contest.name}
+              </h3>
+              <p style={{ marginBottom: "0.5em" }}>
+                <strong>Duration:</strong> {contest.time} minutes
+              </p>
+              <p style={{ marginBottom: "0.5em" }}>
+                <strong>Questions:</strong> {contest.numQuestions}
+              </p>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#463E7D",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#6A5ACD")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#463E7D")}
+                onClick={() => navigate(`/contest-mode/contest-page/${contest._id}`)}
+              >
+                Attempt Contest
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
+
   return (
     <>
       <h1 style={{ textAlign: "center", padding: "1em", color: "#463E7D" }}>

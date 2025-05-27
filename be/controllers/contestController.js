@@ -95,5 +95,28 @@ const deleteDeleteContest=async(req,res)=>{
     }
 
 }
-export default {getGetContest,postCreateContest,postViewContests,putEditContest,deleteDeleteContest}
+
+const getAllContests = async (req, res) => {
+    try {
+        const contests = await Contest.find({});
+        res.status(200).json({
+            msg: "Successfully Fetched",
+            data: contests
+        });
+    } catch (error) {
+        res.status(500).json({
+            msg: "Error fetching contests",
+            error
+        });
+    }
+};
+
+export default {
+    getGetContest,
+    postCreateContest,
+    postViewContests,
+    putEditContest,
+    deleteDeleteContest,
+    getAllContests
+};
 
