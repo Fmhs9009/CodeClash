@@ -5,8 +5,8 @@ import NavBar from './NavBar';
 const Layout = () => {
   const location = useLocation(); // Get the current route location
 
-  // Routes where NavBar should be hidden
-  const excludedPaths = ['/', '/mode/contest-mode/contest-page'];
+  // Routes where NavBar should be hidden (pages with custom navbars)
+  const excludedPaths = ['/', '/mode', '/mode/contest-mode', '/mode/peer-mode', '/mode/contest-mode/contest-page'];
 
   // Check if current route matches any excluded path
   const hideNavBar = excludedPaths.some((path) => location.pathname==path);

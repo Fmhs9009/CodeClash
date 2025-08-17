@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { Container, Typography, Button, Card, TextField } from './ui';
+import { colors, shadows } from '../theme';
 
 const ContestPage = () => {
   const { id } = useParams();
@@ -11,6 +13,60 @@ const ContestPage = () => {
   const [timer, setTimer] = useState(0);
   const [attemptInProgress, setAttemptInProgress] = useState(false);
   const [submissionDone, setSubmissionDone] = useState(false); // Track if submission is done
+  const [submitting, setSubmitting] = useState(false); // Track submission in progress
+
+  const handleSubmit = useCallback(async () => {
+    if (submitting || submissionDone) {
+      console.log('⚠️ Submission already in progress or completed');
+      return;
+    }
+    
+    console.log('🚀 Starting submission process...');
+    console.log('Contest ID:', attemptid);
+    console.log('Answers:', answers);
+    console.log('Contest Details:', contestDetails);
+    
+    setSubmitting(true);
+    
+    // Collect the answers in the desired format
+    const submissionData = {
+      contestID: attemptid,
+      answers: contestDetails.questions.map((question, index) => ({
+        question: question,
+        answer: answers[index] || '', // Ensure empty string if no answer
+      })),
+    };
+    
+    console.log('📤 Submission data:', submissionData);
+
+    try {
+      console.log('📡 Sending request to backend...');
+      const response = await axios.post("http://localhost:4444/createSubmission", submissionData);
+      console.log('✅ Response received:', response);
+      
+      if (response.status === 201 || response.status === 200) {
+        console.log('🎉 Submission successful!');
+        alert("Submission successful!");
+        localStorage.removeItem(`timer-${attemptid}`);
+        localStorage.removeItem(`attemptInProgress-${attemptid}`);
+        setSubmissionDone(true);
+        setAttemptInProgress(false);
+      } else {
+        console.warn('⚠️ Unexpected response status:', response.status);
+        alert(`Unexpected response: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Error submitting answers:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert(`Submission failed: ${error.response?.data?.msg || error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [submitting, submissionDone, attemptid, answers, contestDetails, setSubmitting, setSubmissionDone, setAttemptInProgress]);
 
   useEffect(() => {
     axios
@@ -46,17 +102,18 @@ const ContestPage = () => {
     }, 1000);
 
     return () => clearInterval(interval); // Cleanup
-  }, [attemptInProgress, timer]);
+  }, [attemptInProgress, timer, attemptid]);
 
   useEffect(() => {
     if (timer <= 0 && attemptInProgress) {
+      console.log('⏰ Timer expired! Auto-submitting...');
       setAttemptInProgress(false);
       localStorage.removeItem(`timer-${attemptid}`);
       localStorage.removeItem(`attemptInProgress-${attemptid}`);
       alert("Time's up! Submitting your answers automatically.");
       handleSubmit();
     }
-  }, [timer, attemptInProgress]);
+  }, [timer, attemptInProgress, handleSubmit]);
 
   const startAttempt = () => {
     if (!attemptInProgress) {
@@ -83,229 +140,239 @@ const ContestPage = () => {
     setCurrentQuestionIndex(index);
   };
 
-  const handleSubmit = async () => {
-    // Collect the answers in the desired format
-    const submissionData = {
-      contestID: attemptid,
-      answers: contestDetails.questions.map((question, index) => ({
-        question: question,
-        answer: answers[index],
-      })),
-    };
-
-    try {
-      const response = await axios.post("http://localhost:4444/createSubmission", submissionData);
-      if (response.status === 200) {
-        alert("Submission successful!");
-        localStorage.removeItem(`timer-${attemptid}`);
-        localStorage.removeItem(`attemptInProgress-${attemptid}`);
-        setSubmissionDone(true); // Set submissionDone to true
-      }
-    } catch (error) {
-      console.error("Error submitting answers:", error);
-      alert("Something went wrong, please try again.");
-    }
-  };
-
-  if (!contestDetails ) {
+  if (!contestDetails) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontFamily: "Arial, sans-serif",
-          fontSize: "40px",
-          fontWeight: "bold",
-          color: "#6A5ACD",
-        }}
-      >
-        No contest found , <br />Please enter correct Contest ID and try again...
-      </div>
+      <Container maxWidth="md" style={styles.notFoundContainer}>
+        <Typography variant="h3" style={styles.notFoundText}>
+          No contest found, <br />Please enter correct Contest ID and try again...
+        </Typography>
+      </Container>
     );
   }
+  
   if (submissionDone) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontFamily: "Arial, sans-serif",
-          fontSize: "40px",
-          fontWeight: "bold",
-          color: "#6A5ACD",
-        }}
-      >
-        Thank You
-      </div>
+      <Container maxWidth="md" style={styles.thankYouContainer}>
+        <Typography variant="h2" style={styles.thankYouText}>
+          Thank You
+        </Typography>
+      </Container>
     );
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        backgroundColor: "#f4f6f9",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#6A5ACD",
-          color: "#fff",
-          padding: "15px 20px",
-          textAlign: "center",
-          fontSize: "24px",
-          fontWeight: "bold",
-        }}
-      >
-        Contest
+    <div style={styles.pageContainer}>
+      <div style={styles.header}>
+        <Typography variant="h4" style={styles.headerText}>
+          Contest
+        </Typography>
       </div>
 
-      <div style={{ display: "flex", flex: 1 }}>
+      <div style={styles.contentContainer}>
         {/* Left Side - Timer and Submit */}
-        <div
-          style={{
-            width: "250px",
-            backgroundColor: "#fff",
-            padding: "20px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
-            margin: "20px",
-          }}
-        >
-          <h3>{formatTime(timer)}</h3>
+        <Card variant="outlined" style={styles.sidePanel}>
+          <Typography variant="h4" style={styles.timerText}>
+            {formatTime(timer)}
+          </Typography>
+          
           {timer <= 70 && timer > 0 && (
-            <p style={{ color: "red", fontWeight: "bold" }}>Hurry up!</p>
+            <Typography variant="body1" color="error" style={styles.hurryText}>
+              Hurry up!
+            </Typography>
           )}
-          {!attemptInProgress && (
-            <button
+          
+          {!attemptInProgress ? (
+            <Button
+              variant="contained"
+              color="primary"
               onClick={startAttempt}
-              style={{
-                backgroundColor: "#6A5ACD",
-                color: "white",
-                padding: "12px 20px",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                width: "100%",
-                marginTop: "20px",
-                fontWeight: "bold",
-              }}
+              style={styles.actionButton}
             >
               Start Attempt
-            </button>
-          )}
-          {attemptInProgress && (<button
-            onClick={handleSubmit}
-            style={{
-              backgroundColor: "#6A5ACD",
-              color: "white",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              width: "100%",
-              marginTop: "20px",
-              fontWeight: "bold",
-            }}
-          >
-            Submit
-          </button>
-          )}
-        </div>
-
-        {/* Main Content - Questions and Answers */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {/* Question Navigation */}
-          {attemptInProgress && (
-            <div
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color={submissionDone ? "success" : "primary"}
+              onClick={handleSubmit}
+              disabled={submitting || submissionDone}
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                margin: "20px",
-                gap: "10px",
+                ...styles.actionButton,
+                opacity: submitting || submissionDone ? 0.7 : 1,
+                cursor: submitting || submissionDone ? 'not-allowed' : 'pointer'
               }}
             >
+              {submitting ? '⏳ Submitting...' : submissionDone ? '✅ Submitted' : 'Submit'}
+            </Button>
+          )}
+        </Card>
+
+        {/* Main Content - Questions and Answers */}
+        <div style={styles.mainContent}>
+          {/* Question Navigation */}
+          {attemptInProgress && (
+            <div style={styles.questionNav}>
               {contestDetails.questions.map((question, index) => (
-                <button
+                <Button
                   key={index}
+                  variant={currentQuestionIndex === index ? "contained" : "outlined"}
+                  color="primary"
                   onClick={() => handleQuestionChange(index)}
-                  style={{
-                    padding: "12px 20px",
-                    backgroundColor:
-                      currentQuestionIndex === index ? "#6A5ACD" : "#ddd",
-                    color: currentQuestionIndex === index ? "#fff" : "#000",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    flex: "1 0 20%",
-                    textAlign: "center",
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                  }}
+                  style={styles.questionButton}
                 >
                   Question {index + 1}
-                </button>
+                </Button>
               ))}
             </div>
           )}
 
           {/* Main Question */}
           {attemptInProgress && (
-            <div
-              style={{
-                flex: 1,
-                padding: "20px",
-                backgroundColor: "#fff",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                borderRadius: "8px",
-                margin: "20px",
-              }}
-            >
-              <h2>Question {currentQuestionIndex + 1}</h2>
-              <p>{contestDetails.questions[currentQuestionIndex]}</p>
-            </div>
+            <Card variant="outlined" style={styles.questionCard}>
+              <Typography variant="h5" style={styles.questionTitle}>
+                Question {currentQuestionIndex + 1}
+              </Typography>
+              <Typography variant="body1" style={styles.questionText}>
+                {contestDetails.questions[currentQuestionIndex]}
+              </Typography>
+            </Card>
           )}
 
           {/* Answer Section */}
           {attemptInProgress && (
-            <div
-              style={{
-                backgroundColor: "#fff",
-                padding: "20px",
-                margin: "20px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                borderRadius: "8px",
-              }}
-            >
-              <h2>Your Answer</h2>
-              <textarea
+            <Card variant="outlined" style={styles.answerCard}>
+              <Typography variant="h5" style={styles.answerTitle}>
+                Your Answer
+              </Typography>
+              <TextField
+                multiline
+                rows={8}
                 value={answers[currentQuestionIndex]}
                 onChange={(e) => handleAnswerChange(currentQuestionIndex, e.target.value)}
-                style={{
-                  width: "100%",
-                  height: "200px",
-                  padding: "10px",
-                  fontSize: "16px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  resize: "vertical",
-                }}
+                style={styles.answerInput}
                 placeholder="Type your answer here... (please make sure to write the answer of which question you selected)"
               />
-            </div>
+            </Card>
           )}
         </div>
       </div>
     </div>
   );
+};
+
+const styles = {
+  pageContainer: {
+    display: "flex",
+    flexDirection: "column",
+    minHeight: "100vh",
+    backgroundColor: colors.background.default,
+  },
+  header: {
+    backgroundColor: colors.primary.main,
+    color: colors.background.paper,
+    padding: "16px 24px",
+    textAlign: "center",
+  },
+  headerText: {
+    fontWeight: 700,
+    color: colors.background.paper,
+  },
+  contentContainer: {
+    display: "flex",
+    flex: 1,
+    padding: "24px",
+  },
+  sidePanel: {
+    width: "250px",
+    padding: "24px",
+    boxShadow: shadows.medium,
+    borderRadius: "12px",
+    marginRight: "24px",
+    height: "fit-content",
+  },
+  timerText: {
+    textAlign: "center",
+    color: colors.primary.main,
+    fontWeight: 700,
+    marginBottom: "16px",
+  },
+  hurryText: {
+    textAlign: "center",
+    fontWeight: 700,
+    marginBottom: "16px",
+  },
+  actionButton: {
+    width: "100%",
+    marginTop: "16px",
+    padding: "12px",
+    fontWeight: 600,
+  },
+  mainContent: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+  },
+  questionNav: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "12px",
+    marginBottom: "24px",
+  },
+  questionButton: {
+    flex: "1 0 20%",
+    padding: "12px",
+  },
+  questionCard: {
+    padding: "24px",
+    marginBottom: "24px",
+    boxShadow: shadows.small,
+    borderRadius: "12px",
+  },
+  questionTitle: {
+    color: colors.primary.main,
+    fontWeight: 600,
+    marginBottom: "16px",
+  },
+  questionText: {
+    color: colors.text.primary,
+    fontSize: "16px",
+    lineHeight: 1.6,
+  },
+  answerCard: {
+    padding: "24px",
+    boxShadow: shadows.small,
+    borderRadius: "12px",
+  },
+  answerTitle: {
+    color: colors.primary.main,
+    fontWeight: 600,
+    marginBottom: "16px",
+  },
+  answerInput: {
+    width: "100%",
+  },
+  notFoundContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+  },
+  notFoundText: {
+    fontWeight: 700,
+    color: colors.primary.main,
+    textAlign: "center",
+  },
+  thankYouContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+  },
+  thankYouText: {
+    fontWeight: 700,
+    color: colors.primary.main,
+    textAlign: "center",
+  },
 };
 
 export default ContestPage;

@@ -3,18 +3,17 @@ import PeerProgPage from "./PeerProgPage";
 import { io } from "socket.io-client";
 import socket from "./Socket";
 import { useAuth0 } from '@auth0/auth0-react';
-
+import { Container, Typography, Button, Card, TextField } from './ui';
+import { colors, shadows } from '../theme';
 
 const PeerMode = () => {
-  // const socket = useMemo(() => io("http://localhost:3000/"), []);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [roomid, setRoomid] = useState("");
-  const [joinedRoom,setJoinedRoom] = useState("");
+  const [joinedRoom, setJoinedRoom] = useState("");
 
+  const { user } = useAuth0();
 
-
-  const {user}=useAuth0();
   // Listen for incoming messages
   useEffect(() => {
     socket.on("receive-message", (message) => {
@@ -26,7 +25,6 @@ const PeerMode = () => {
     };
   }, [socket]);
   
-
   // Send a new message
   const sendMessage = useCallback(
     (e) => {
@@ -37,44 +35,49 @@ const PeerMode = () => {
   
       if (newMessage.trim() && roomid) {
         const message = { text: newMessage };
-        const senderUserName=user.name;
-        console.log("Sending message:", { message, roomid , senderUserName}); // Log message details
-        console.log("senderUserName:",user.name);
+        const senderUserName = user.name;
+        console.log("Sending message:", { message, roomid, senderUserName }); 
+        console.log("senderUserName:", user.name);
        
-        socket.emit("send-message", { message, roomid ,senderUserName });
+        socket.emit("send-message", { message, roomid, senderUserName });
         setMessages((prevMessages) => [
           ...prevMessages,
-          { ...message, sender: socket.id,senderUserName },
+          { ...message, sender: socket.id, senderUserName },
         ]);
-        setNewMessage(""); // This should clear the input
+        setNewMessage(""); 
         console.log("Message sent and input cleared");
       } else {
         console.log("Message or Room ID is invalid");
       }
     },
-    [socket, newMessage, roomid]
+    [socket, newMessage, roomid, user]
   );
-  
- 
-  
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>Peer Programming Mode</h1>
-        <p style={styles.subtitle}>
+    <Container maxWidth="lg" style={styles.container}>
+      <div style={styles.header}>
+        <Typography variant="h2" style={styles.title}>
+          Peer Programming Mode
+        </Typography>
+        <Typography variant="body1" style={styles.subtitle}>
           Collaborate on code, debug together, and learn effectively with your peers.
-        </p>
-      </header>
+        </Typography>
+      </div>
 
-      <main style={styles.content}>
-        <section style={styles.chatSection}>
+      <div style={styles.content}>
+        <Card variant="outlined" style={styles.chatSection}>
           <div style={styles.chatHeadingDiv}>
-            <h2 style={styles.chatTitle}>Chat</h2>
+            <Typography variant="h4" style={styles.chatTitle}>
+              Chat
+            </Typography>
             {joinedRoom && (
               <div style={styles.roomInfo}>
-                <h2 style={styles.roomTitle}>Joined Room:</h2>
-                <p style={styles.roomId}>{joinedRoom}</p>
+                <Typography variant="h4" style={styles.roomTitle}>
+                  Joined Room:
+                </Typography>
+                <Typography variant="h4" style={styles.roomId}>
+                  {joinedRoom}
+                </Typography>
               </div>
             )}
           </div>
@@ -85,59 +88,68 @@ const PeerMode = () => {
                 style={{
                   ...styles.message,
                   alignSelf: msg.sender === socket.id ? "flex-end" : "flex-start",
+                  backgroundColor: msg.sender === socket.id ? colors.primary.light : colors.background.paper,
+                  color: msg.sender === socket.id ? colors.background.paper : colors.text.primary,
                 }}
               >
-                <span style={{color:"black", fontWeight:"bolder"}}>{msg.senderUserName || "Unknown User"}</span>
-<br />
-                {msg.text}
+                <Typography variant="subtitle2" style={styles.messageSender}>
+                  {msg.senderUserName || "Unknown User"}
+                </Typography>
+                <Typography variant="body2">
+                  {msg.text}
+                </Typography>
               </div>
             ))}
           </div>
           <form style={styles.chatForm} onSubmit={sendMessage}>
-            <input
+            <TextField
               type="text"
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               style={styles.chatInput}
             />
-            <button type="submit" style={styles.chatButton}>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+              style={styles.chatButton}
+            >
               Send
-            </button>
+            </Button>
           </form>
-        </section>
+        </Card>
             
-        <section style={styles.actionSection}>
-          <PeerProgPage setRoomid={setRoomid} roomid={roomid} setJoinedRoom={setJoinedRoom} joinedRoom={joinedRoom} />
-        </section>
-
-      </main>
-    </div>
+        <Card variant="outlined" style={styles.actionSection}>
+          <PeerProgPage 
+            setRoomid={setRoomid} 
+            roomid={roomid} 
+            setJoinedRoom={setJoinedRoom} 
+            joinedRoom={joinedRoom} 
+          />
+        </Card>
+      </div>
+    </Container>
   );
 };
 
 const styles = {
   container: {
-    fontFamily: "'Roboto', sans-serif",
-    backgroundColor: "#F7F9FC",
     padding: "20px",
-    borderRadius: "8px",
-    maxWidth: "1200px",
-    margin: "20px auto",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    marginBottom: "40px",
   },
   header: {
     textAlign: "center",
     marginBottom: "30px",
   },
   title: {
-    fontSize: "36px",
-    color: "#463E7D",
+    color: colors.primary.main,
     marginBottom: "10px",
+    fontWeight: 700,
   },
   subtitle: {
+    color: colors.text.secondary,
     fontSize: "18px",
-    color: "#6B7280",
   },
   content: {
     display: "flex",
@@ -149,87 +161,77 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%", 
+    marginBottom: "16px",
   },
   chatSection: {
-    height:'200px',
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    padding: "24px",
+    borderRadius: "12px",
+    boxShadow: shadows.medium,
+    backgroundColor: colors.background.default,
     marginBottom: "20px",
   },
   chatTitle: {
-    fontSize: "1.7vw",
-    color: "#463E7D",
-    fontWeight: "bold",
-    marginBottom: "10px",
+    color: colors.primary.main,
+    fontWeight: 600,
   },
   chatBox: {
-    height: "200px",
-    overflowY: "scroll",
-    marginBottom: "10px",
-    padding: "10px",
-    border: "1px solid #E5E7EB",
+    height: "300px",
+    overflowY: "auto",
+    marginBottom: "16px",
+    padding: "16px",
+    border: `1px solid ${colors.divider}`,
     borderRadius: "8px",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.background.paper,
+    display: "flex",
+    flexDirection: "column",
   },
   message: {
-    backgroundColor: "#E5E7EB",
-    borderRadius: "8px",
-    padding: "8px 12px",
+    borderRadius: "12px",
+    padding: "12px 16px",
     margin: "5px 0",
-    maxWidth: "0%",        // Max width won't exceed 70% of the parent container
-    minWidth: "fit-content", // Min width will adjust based on content
-    wordWrap: "break-word",  // Ensure wrapping of long words
-    whiteSpace: "normal",    // Allow text to wrap naturally
-    overflowWrap: "break-word", // Ensure overflowed text breaks into the next line
+    maxWidth: "70%",
+    minWidth: "fit-content",
+    wordWrap: "break-word",
+    whiteSpace: "normal",
+    overflowWrap: "break-word",
+    boxShadow: shadows.small,
   },  
-  
+  messageSender: {
+    fontWeight: 700,
+    marginBottom: "4px",
+  },
   chatForm: {
     display: "flex",
-    gap: "10px",
+    gap: "12px",
   },
   chatInput: {
     flex: 1,
-    padding: "10px",
-    borderRadius: "4px",
-    border: "1px solid #E5E7EB",
   },
   chatButton: {
-    backgroundColor: "#463E7D",
-    color: "#FFFFFF",
-    borderRadius: "4px",
-    padding: "10px 20px",
-    fontWeight: "bold",
-    cursor: "pointer",
+    minWidth: "100px",
   },
   actionSection: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    padding: "24px",
+    borderRadius: "12px",
+    boxShadow: shadows.medium,
+    backgroundColor: colors.background.default,
   },
   roomInfo: {
     display: "flex",
-    justifyContent: "flex-end",
-    gap: "2%", 
-    width: "100%", 
-    marginBottom: "10px",
+    alignItems: "center",
+    gap: "10px",
   },
   roomTitle: {
-    fontWeight: "bold",
-    color: "#463E7D",
-    margin: "0",
-    fontSize: "1.7vw", 
+    fontWeight: 600,
+    color: colors.primary.main,
+    margin: 0,
+    fontSize: "1.2rem",
   },
   roomId: {
-    fontSize: "1.7vw", 
-    color: "#6B7280",
-    margin: "0",
+    color: colors.text.secondary,
+    margin: 0,
+    fontSize: "1.2rem",
   },
-  
 };
 
 export default PeerMode;

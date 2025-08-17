@@ -1,106 +1,196 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Button, Container, Typography } from './ui';
+import { colors, shadows } from '../theme';
 
 const NavBar = () => {
-  const { logout } = useAuth0();
+  const { logout, user } = useAuth0();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
 
   return (
     <nav style={styles.navbar}>
-      <div style={styles.container}>
+      <Container maxWidth="lg" style={styles.container}>
         {/* Logo */}
         <div style={styles.logo}>
-          <Link to="/" style={styles.logoLink}>CodeClash</Link>
+          <Link to="/" style={styles.logoLink}>
+            <Typography variant="h4" style={{ margin: 0, color: '#fff' }}>
+              <span style={styles.logoText}>Code<span style={styles.logoHighlight}>Clash</span></span>
+            </Typography>
+          </Link>
         </div>
 
+        {/* Mobile menu button */}
+        {isMobile && (
+          <div style={styles.mobileMenuButton} onClick={toggleMobileMenu}>
+            <div style={styles.menuIcon}></div>
+            <div style={styles.menuIcon}></div>
+            <div style={styles.menuIcon}></div>
+          </div>
+        )}
+
         {/* Navigation Links */}
-        <ul style={styles.navList}>
-          <li style={styles.navItem}>
+        <ul style={{
+          ...styles.navList,
+          ...(isMobile && mobileMenuOpen ? styles.navListMobileOpen : {}),
+          display: isMobile && !mobileMenuOpen ? 'none' : 'flex'
+        }}>
+          <li style={isMobile ? {...styles.navItem, ...styles.navItemMobile} : styles.navItem}>
             <Link to="/mode" style={styles.link}>Home</Link>
           </li>
-          <li style={styles.navItem}>
+          <li style={isMobile ? {...styles.navItem, ...styles.navItemMobile} : styles.navItem}>
             <Link to="/mode/peer-mode" style={styles.link}>Peer Mode</Link>
           </li>
-          <li style={styles.navItem}>
+          <li style={isMobile ? {...styles.navItem, ...styles.navItemMobile} : styles.navItem}>
             <Link to="/mode/contest-mode" style={styles.link}>Contest Mode</Link>
           </li>
+          {user && (
+            <li style={styles.navItem}>
+              <div style={styles.userInfo}>
+                {user.picture && (
+                  <img src={user.picture} alt={user.name} style={styles.userAvatar} />
+                )}
+                <span style={styles.userName}>{user.name}</span>
+              </div>
+            </li>
+          )}
           <li style={styles.navItem}>
-            <button
-              onClick={() => logout({ returnTo: window.location.origin })}
+            <Button
+              variant="outlined"
+              onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
               style={styles.logoutButton}
             >
               Logout
-            </button>
+            </Button>
           </li>
         </ul>
-      </div>
+      </Container>
     </nav>
   );
 };
 
 const styles = {
   navbar: {
-    background: 'linear-gradient(135deg, #6A5ACD, #463E7D)', // Gradient background
-    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)', // Slightly stronger shadow for modern look
+    background: `linear-gradient(135deg, ${colors.primary.main}, ${colors.primary.dark})`,
+    boxShadow: shadows.medium,
     position: 'sticky',
     top: 0,
     zIndex: 1000,
-    padding: '10px 0', // Reduced padding for compact look
+    padding: '12px 0',
   },
   container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '0 20px',
+    width: '100%',
   },
   logo: {
-    fontSize: '30px',
-    fontWeight: 'bold',
-    letterSpacing: '1px',
+    display: 'flex',
+    alignItems: 'center',
   },
   logoLink: {
     textDecoration: 'none',
-    color: '#FFFFFF',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  logoText: {
+    fontWeight: 700,
+    letterSpacing: '0.5px',
+  },
+  logoHighlight: {
+    color: colors.secondary.main,
+  },
+  mobileMenuButton: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    width: '30px',
+    height: '21px',
+    cursor: 'pointer',
+  },
+  menuIcon: {
+    width: '100%',
+    height: '3px',
+    backgroundColor: '#fff',
+    borderRadius: '3px',
   },
   navList: {
     display: 'flex',
+    alignItems: 'center',
     listStyle: 'none',
     margin: 0,
-    alignItems:'center',
     padding: 0,
-    gap: '30px', // Increased gap for more breathing room
+    transition: 'all 0.3s ease',
+  },
+  navListMobileOpen: {
+    position: 'absolute',
+    top: '60px',
+    right: '0',
+    flexDirection: 'column',
+    backgroundColor: colors.primary.dark,
+    width: '70%',
+    borderRadius: '0 0 10px 10px',
+    boxShadow: shadows.large,
+    zIndex: 1000,
+    padding: '1rem 0',
   },
   navItem: {
-    position: 'relative',
+    margin: '0 0.5rem',
+  },
+  navItemMobile: {
+    margin: '0.5rem 0',
+    width: '100%',
+    textAlign: 'center',
   },
   link: {
+    color: '#fff',
     textDecoration: 'none',
-    color: '#FFFFFF',
-    fontWeight: '500',
-    fontSize: '16px',
-    padding: '12px 18px', // Increased padding for a bigger button
-    borderRadius: '30px', // Rounded buttons
-    transition: 'background-color 0.3s, color 0.3s, transform 0.2s',
-  },
-  linkHover: {
-    backgroundColor: '#5A4F8E',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
+    transition: 'background-color 0.3s ease',
+    display: 'block',
+    fontWeight: 500,
   },
   logoutButton: {
-    backgroundColor: '#FF4D4D',
-    color: '#FFFFFF',
-    border: 'none',
-    borderRadius: '30px', // Rounded button for consistency
-    padding: '12px 18px', // Similar size as links
-    fontSize: '16px',
-    fontWeight: 'bold',
+    backgroundColor: 'transparent',
+    color: '#fff',
+    border: '1px solid #fff',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
     cursor: 'pointer',
-    transition: 'background-color 0.3s, transform 0.2s',
+    transition: 'all 0.3s ease',
+    fontWeight: 500,
   },
-  logoutButtonHover: {
-    backgroundColor: '#E54444',
-    transform: 'scale(1.05)',
+  userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    color: '#fff',
+    padding: '0.5rem 1rem',
+  },
+  userAvatar: {
+    width: '30px',
+    height: '30px',
+    borderRadius: '50%',
+    marginRight: '0.5rem',
+    border: '2px solid ' + colors.secondary.main,
+  },
+  userName: {
+    fontWeight: 500,
   },
 };
 

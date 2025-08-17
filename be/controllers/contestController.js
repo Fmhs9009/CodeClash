@@ -43,19 +43,33 @@ const getGetContest=async (req,res)=>{
     const {id}=req.query;
 try{
     const details=await Contest.findById(id)
+    if (!details) {
+        return res.status(404).json({
+            msg: "Contest not found"
+        });
+    }
     res.status(200).json({
         details
     })
-
 }
 catch(err){
     console.log("Error while fetching contest details",err);
+    res.status(500).json({
+        msg: "Error while fetching contest details",
+        err: err.message
+    });
 }
 }
 
 
 const postViewContests=async(req,res)=>{
     const {sub}=req.body;
+
+    if (!sub) {
+        return res.status(400).json({
+            msg: "User ID (sub) is required"
+        });
+    }
 
     try {
         let data=await Contest.find({createdBy:sub});
@@ -66,18 +80,40 @@ const postViewContests=async(req,res)=>{
 
     } catch (error) {
         console.log(error);
+        res.status(500).json({
+            msg: "Error fetching contests",
+            error: error.message
+        });
     }
 }
 const putEditContest= async(req,res)=>{
 
     const {id, editForm}=req.body;
+    
+    if (!id || !editForm) {
+        return res.status(400).json({
+            msg: "Contest ID and edit form data are required"
+        });
+    }
+    
     try {
-        await Contest.findOneAndUpdate({_id:id},{
+        const result = await Contest.findOneAndUpdate({_id:id},{
             $set:editForm
-        })
-        res.status(200).json({msg:"Updated Successfully"})
+        }, { new: true });
+        
+        if (!result) {
+            return res.status(404).json({
+                msg: "Contest not found"
+            });
+        }
+        
+        res.status(200).json({msg:"Updated Successfully", contest: result})
     } catch (error) {
         console.log(error);
+        res.status(500).json({
+            msg: "Error updating contest",
+            error: error.message
+        });
     }
 }
 

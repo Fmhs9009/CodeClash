@@ -20,12 +20,17 @@ app.use('/', router);
 // Database Connection
 mongoose.connect('mongodb://127.0.0.1:27017/mydb')
     .then(() => {
+        console.log('✅ Connected to MongoDB successfully');
         app.listen(API_PORT, () => {
-            console.log(`Backend -> http://localhost:${API_PORT}`);
+            console.log(`✅ Backend API Server -> http://localhost:${API_PORT}`);
         });
     })
     .catch(err => {
-        console.error('Error while connecting to DB:', err);
+        console.error('❌ Error while connecting to MongoDB:', err.message);
+        console.log('⚠️  Starting server without database connection...');
+        app.listen(API_PORT, () => {
+            console.log(`⚠️  Backend API Server (No DB) -> http://localhost:${API_PORT}`);
+        });
     });
 
 // WebSocket Server
@@ -91,5 +96,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(SOCKET_PORT, () => {
-    console.log(`Socket Server -> http://localhost:${SOCKET_PORT}`);
+    console.log(`✅ Socket Server -> http://localhost:${SOCKET_PORT}`);
 });

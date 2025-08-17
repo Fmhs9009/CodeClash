@@ -1,3 +1,4 @@
+*.env
 # Logs
 logs
 *.log
@@ -47,5 +48,4 @@ build/
 coverage/
 
 # Others
-*.env
 *.local

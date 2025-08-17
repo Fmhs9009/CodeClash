@@ -1,24 +1,35 @@
 
 import Submission from "./../model/submissions.js"
-import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
 
 const postCreateSubmission=async (req,res)=>{
 
         const {contestID, answers}=req.body;
 
+        if (!contestID || !answers) {
+            return res.status(400).json({
+                msg: "Contest ID and answers are required"
+            });
+        }
+
     try{
-        await Submission.create({
+        const submission = await Submission.create({
             contestID,
             answers,
         })
     
-        res.status(200).json({
-            msg:"Submission successful"
+        res.status(201).json({
+            msg:"Submission successful",
+            submissionId: submission._id
         })
     
     }
     catch(err){
         console.log("Error submitting answers",err);
+        res.status(500).json({
+            msg: "Error submitting answers",
+            error: err.message
+        });
     }
 
 }
@@ -26,14 +37,34 @@ const postFeedback=async (req,res)=>{
 
     const {subID,feedback,name}=req.body;
 
-try {
-        const sub=await Submission.updateOne({_id:new ObjectId(subID)},{
+    if (!subID || !feedback) {
+        return res.status(400).json({
+            msg: "Submission ID and feedback are required"
+        });
+    }
+
+    try {
+        const sub=await Submission.updateOne({_id:new mongoose.Types.ObjectId(subID)},{
             $set:{feedback:feedback, reviewedBy:name}
         })
-        res.send(sub);
-} catch (error) {
-    console.log(error);
-}
+        
+        if (sub.matchedCount === 0) {
+            return res.status(404).json({
+                msg: "Submission not found"
+            });
+        }
+        
+        res.status(200).json({
+            msg: "Feedback submitted successfully",
+            result: sub
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            msg: "Error submitting feedback",
+            error: error.message
+        });
+    }
 }
 
 const getGetSubmissions=async (req,res)=>{

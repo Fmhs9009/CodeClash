@@ -6,6 +6,8 @@ import { cpp } from '@codemirror/lang-cpp';
 import { java } from '@codemirror/lang-java'; 
 import socket from "./Socket"; 
 import createSubmission from './CodeExecution';
+import { Button, Typography, TextField, Select } from './ui';
+import { colors, shadows } from '../theme';
 
 const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   const [code, setCode] = useState("");
@@ -40,7 +42,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   const joinRoom = useCallback((e) => {
     e.preventDefault();
     if (roomid.trim() === "") {
-      alert('Pls enter a room id')
+      alert('Please enter a room ID');
       return;
     }
 
@@ -49,10 +51,9 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
     setJoinedRoom(roomid);
     setIsRoomJoined(true);
     roomInputRef.current.value = "";
-  }, [roomid]);
+  }, [roomid, setJoinedRoom]);
 
   const disconnectRoom = useCallback(() => {
-    
     if (!joinedRoom) return;
 
     console.log("Disconnecting from room:", joinedRoom);
@@ -61,12 +62,12 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
     setIsRoomJoined(false);
     setJoinedRoom("");
     setRoomid("");
-  }, [joinedRoom]);
+  }, [joinedRoom, setJoinedRoom, setRoomid]);
 
   const runCode = useCallback(async () => {
     if (code.trim() === "") return;
     if (language === '') {
-      alert('Pls choose ur language');
+      alert('Please choose your language');
       return;
     }
     try {
@@ -80,7 +81,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
       console.error("Execution error:", error);
       setStdOutput("Error executing code.");
     }
-  }, [code, id, stdInput]);
+  }, [code, id, stdInput, roomid]);
 
   const updateInput = useCallback((inputValue) => {
     setStdInput(inputValue);
@@ -102,6 +103,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   
     if (roomid !== "") socket.emit("update-language", { language: newLang, roomid });
   }, [roomid]);
+
   const SetLanguage = useMemo(() => {
     if (!language) return []; // Prevent undefined errors in CodeMirror
   
@@ -118,56 +120,102 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
     <div style={styles.container}>
       {/* Room ID, Language Select, and Buttons in One Line */}
       <form style={styles.form} onSubmit={joinRoom}>
-        <input
+        <TextField
           type="text"
           placeholder="Enter Room ID"
           value={roomid}
-          ref={roomInputRef}
+          inputRef={roomInputRef}
           onChange={(e) => setRoomid(e.target.value)}
           style={styles.input}
-          readOnly={isRoomJoined}
+          disabled={isRoomJoined}
         />
 
-        <select value={language} onChange={(e) => updateLang(e.target.value)} style={styles.select}>
-          <option value="">Select your language</option>
-          <option value="javascript">JavaScript</option>
-          <option value="python">Python</option>
-          <option value="cpp">C++</option>
-          <option value="java">Java</option>
-        </select>
+        <Select
+          value={language}
+          onChange={(e) => updateLang(e.target.value)}
+          style={styles.select}
+          options={[
+            { value: "", label: "Select your language" },
+            { value: "javascript", label: "JavaScript" },
+            { value: "python", label: "Python" },
+            { value: "cpp", label: "C++" },
+            { value: "java", label: "Java" }
+          ]}
+        />
 
         {!isRoomJoined ? (
-          <button type="submit" style={styles.button}>Join</button>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="success"
+            style={styles.button}
+          >
+            Join
+          </Button>
         ) : (
-          <button type="button" onClick={(e) => { e.preventDefault(); disconnectRoom(); }} style={styles.disconnectButton}>Disconnect</button>
+          <Button 
+            type="button" 
+            variant="contained" 
+            color="error"
+            onClick={(e) => { e.preventDefault(); disconnectRoom(); }} 
+            style={styles.disconnectButton}
+          >
+            Disconnect
+          </Button>
         )}
-        <button type="button" onClick={runCode} style={styles.runButton}>Run Code</button>
+        <Button 
+          type="button" 
+          variant="contained" 
+          color="success"
+          onClick={runCode} 
+          style={styles.runButton}
+        >
+          Run Code
+        </Button>
       </form>
 
       {/* Code Editor */}
-      {/* <div style={styles.codeEditor}>
-        <h1>Code Here⤵</h1>
-        <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
-      </div> */}
       <div style={styles.codeEditor}>
-        <h2 style={{
-      color: "#463E7D",
-      fontWeight: "bold",
-      marginBottom: "10px",}}>Code Here⤵</h2>
-        <CodeMirror value={code} extensions={[SetLanguage]} onChange={(value) => updateCode(value)} style={styles.codeEditor} />
+        <Typography variant="h4" style={styles.codeEditorTitle}>
+          Code Here ⤵
+        </Typography>
+        <CodeMirror 
+          value={code} 
+          extensions={[SetLanguage]} 
+          onChange={(value) => updateCode(value)} 
+          style={styles.codeMirror} 
+        />
       </div>
       
-
       {/* IO Container: Input Left, Output Right */}
       <div style={styles.ioContainer}>
         <div style={styles.inputContainer}>
-          <h2 style={styles.ioHeader}>Input</h2>
-          <textarea name="inputArea" placeholder="Enter Input" value={stdInput} onChange={(e) => updateInput(e.target.value)} style={styles.ioBox} />
+          <Typography variant="h5" style={styles.ioHeader}>
+            Input
+          </Typography>
+          <TextField
+            multiline
+            rows={6}
+            name="inputArea"
+            placeholder="Enter Input"
+            value={stdInput}
+            onChange={(e) => updateInput(e.target.value)}
+            style={styles.ioBox}
+          />
         </div>
 
         <div style={styles.outputContainer}>
-          <h2 style={styles.ioHeader}>Output</h2>
-          <textarea name="outputArea" value={stdOutput} readOnly style={styles.ioBox} />
+          <Typography variant="h5" style={styles.ioHeader}>
+            Output
+          </Typography>
+          <TextField
+            multiline
+            rows={6}
+            name="outputArea"
+            value={stdOutput}
+            readOnly
+            style={styles.ioBox}
+          />
         </div>
       </div>
     </div>
@@ -177,80 +225,65 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
 const styles = {
   container: {
     padding: "20px",
-    backgroundColor: "#F7F9FC",
+    backgroundColor: colors.background.default,
     borderRadius: "8px",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
   },
   form: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: "12px",
     justifyContent: "center",
-    marginBottom: "20px",
+    marginBottom: "24px",
   },
   input: {
-    padding: "10px",
-    fontSize: "16px",
-    border: "1.5px solid #D1D5DB",
-    borderRadius: "6px",
-    outline: "none",
     width: "180px",
   },
   select: {
-    padding: "10px",
-    fontSize: "16px",
-    borderRadius: "6px",
-    border: "1.5px solid #D1D5DB",
-    backgroundColor: "#FFF",
+    minWidth: "180px",
   },
   button: {
-    padding: "10px 16px",
-    backgroundColor: "#4CAF50",
-    color: "#FFF",
-    borderRadius: "6px",
-    cursor: "pointer",
+    minWidth: "100px",
   },
   disconnectButton: {
-    backgroundColor: "#FF4D4D",
-    color: "#FFF",
-    borderRadius: "6px",
-    padding: "10px 16px",
+    minWidth: "100px",
   },
   runButton: {
-    backgroundColor: "#28A745",
-    color: "#FFF",
-    borderRadius: "6px",
-    padding: "10px 16px",
+    minWidth: "100px",
   },
   codeEditor: {
     borderRadius: "8px",
-    border: "1.5px solid #D1D5DB",
-    padding: "10px",
-    backgroundColor: "#FFF",
+    border: `1px solid ${colors.divider}`,
+    padding: "16px",
+    backgroundColor: colors.background.paper,
+    marginBottom: "24px",
+  },
+  codeEditorTitle: {
+    color: colors.primary.main,
+    fontWeight: 600,
+    marginBottom: "16px",
+  },
+  codeMirror: {
+    borderRadius: "4px",
+    overflow: "hidden",
   },
   ioContainer: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "20px",
-    marginTop: "20px",
+    gap: "24px",
   },
-  inputContainer: { width: "48%" },
-  outputContainer: { width: "48%" },
+  inputContainer: { 
+    width: "48%" 
+  },
+  outputContainer: { 
+    width: "48%" 
+  },
   ioHeader: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    marginBottom: "10px",
-    color: "#463E7D",
+    fontWeight: 600,
+    marginBottom: "12px",
+    color: colors.primary.main,
   },
   ioBox: {
     width: "100%",
-    minHeight: "120px",
-    borderRadius: "6px",
-    padding: "10px",
-    fontSize: "16px",
-    border: "1.5px solid #D1D5DB",
-    backgroundColor: "#F9F9F9",
-    resize: "none",
   },
 };
 
