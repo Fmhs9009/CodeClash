@@ -115,30 +115,63 @@ const ContestMode = () => {
   const contestCreated = () => {
     return (
       <Container maxWidth="sm" style={styles.container}>
-        <Card variant="elevated" style={styles.card}>
-          <Typography variant="h4" style={styles.cardTitle}>
-            New Contest Created
+        <Card variant="elevated" style={styles.successCard}>
+          {/* Success Icon */}
+          <div style={styles.successIcon}>
+            🎉
+          </div>
+          
+          <Typography variant="h3" style={styles.successTitle}>
+            Contest Created Successfully!
           </Typography>
           
-          <div style={styles.fieldContainer}>
-            <Typography variant="body1" style={styles.fieldLabel}>
-              Contest ID:
+          <Typography variant="body1" style={styles.successSubtitle}>
+            Your coding challenge is ready to share with participants
+          </Typography>
+
+          {/* Contest ID Display */}
+          <div style={styles.idDisplayContainer}>
+            <Typography variant="body1" style={styles.idLabel}>
+              Contest ID
             </Typography>
-            <div style={styles.idContainer}>
-              <Typography variant="body1" style={styles.idValue}>
+            <div style={styles.idBox}>
+              <Typography variant="h5" style={styles.idText}>
                 {id}
               </Typography>
             </div>
           </div>
 
-          <Button 
-            variant="contained" 
-            color="primary"
-            onClick={handleCopy}
-            style={styles.button}
-          >
-            Copy ID
-          </Button>
+          {/* Action Buttons */}
+          <div style={styles.buttonGroup}>
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={handleCopy}
+              style={styles.copyButton}
+            >
+              📋 Copy Contest ID
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              onClick={() => setAction("created-contests")}
+              style={styles.viewContestsButton}
+            >
+              📊 View My Contests
+            </Button>
+          </div>
+
+          {/* Instructions */}
+          <div style={styles.instructionsContainer}>
+            <Typography variant="body2" style={styles.instructionsTitle}>
+              Next Steps:
+            </Typography>
+            <ul style={styles.instructionsList}>
+              <li style={styles.instructionItem}>Share the Contest ID with participants</li>
+              <li style={styles.instructionItem}>Participants can join using "Attempt Contest"</li>
+              <li style={styles.instructionItem}>Monitor submissions in "View My Contests"</li>
+            </ul>
+          </div>
         </Card>
       </Container>
     );
@@ -148,6 +181,8 @@ const ContestMode = () => {
     const [contestId, setContestId] = React.useState("");
     const [submissions, setSubmissions] = React.useState([]);
     const [error, setError] = React.useState("");
+    const [loading, setLoading] = React.useState(false);
+    const [searchPerformed, setSearchPerformed] = React.useState(false);
 
     const [logic, setLogic] = React.useState("0");
     const [efficiency, setEfficiecny] = React.useState("0");
@@ -157,56 +192,168 @@ const ContestMode = () => {
 
     const handleContestIdChange = (e) => {
       setContestId(e.target.value);
+      if (error) setError(""); // Clear error when user starts typing
     };
 
     const fetchSubmissions = async () => {
-      if (!contestId) {
+      if (!contestId.trim()) {
         setError("Please enter a contest ID.");
         return;
       }
+
+      setLoading(true);
+      setError("");
+      setSearchPerformed(true);
 
       try {
         const response = await fetch(
           `http://localhost:4444/getSubmission?id=${contestId}`
         );
         const data = await response.json();
-        setSubmissions(data.data);
-        setError("");
+        
+        if (response.ok) {
+          setSubmissions(data.data || []);
+          if (!data.data || data.data.length === 0) {
+            setError("No submissions found for this contest ID.");
+          }
+        } else {
+          setError(data.message || "Contest not found or no submissions available.");
+          setSubmissions([]);
+        }
       } catch (err) {
-        setError("Error fetching submissions.");
+        setError("Failed to fetch submissions. Please check the contest ID and try again.");
+        setSubmissions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleKeyPress = (e) => {
+      if (e.key === 'Enter') {
+        fetchSubmissions();
       }
     };
 
     return (
-      <Container maxWidth="md" style={styles.container}>
-        <Card variant="elevated" style={styles.card}>
+      <Container maxWidth="lg" style={styles.container}>
+        <Card variant="elevated" style={styles.submissionsCard}>
+          {/* Premium Header Section */}
+          <div style={styles.submissionsHeader}>
+            <div style={styles.headerIcon}>📊</div>
+            <div style={styles.headerContent}>
+              <Typography variant="h3" style={styles.submissionsTitle}>
+                Contest Submissions
+              </Typography>
+              <Typography variant="body1" style={styles.submissionsSubtitle}>
+                Enter a contest ID to view and manage participant submissions
+              </Typography>
+            </div>
+          </div>
+
+          {/* Premium Search Section */}
+          <div style={styles.searchSection}>
+            <div style={styles.searchInputContainer}>
+              <div style={styles.inputWrapper}>
+                <div style={styles.inputIcon}>🔍</div>
+                <TextField
+                  type="text"
+                  value={contestId}
+                  onChange={handleContestIdChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter Contest ID (e.g., 507f1f77bcf86cd799439011)"
+                  style={styles.premiumSearchInput}
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={fetchSubmissions}
+                disabled={loading || !contestId.trim()}
+                style={{
+                  ...styles.premiumSearchButton,
+                  opacity: loading || !contestId.trim() ? 0.6 : 1,
+                  cursor: loading || !contestId.trim() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {loading ? (
+                  <>
+                    <div style={styles.loadingSpinner}></div>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    📋 View Submissions
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Error Display */}
           {error && (
-            <Typography variant="body1" color="error" style={styles.errorText}>
-              {error}
-            </Typography>
+            <div style={styles.errorSection}>
+              <div style={styles.errorIcon}>⚠️</div>
+              <div style={styles.errorContent}>
+                <Typography variant="h6" style={styles.errorTitle}>
+                  Unable to Load Submissions
+                </Typography>
+                <Typography variant="body2" style={styles.errorMessage}>
+                  {error}
+                </Typography>
+              </div>
+            </div>
           )}
 
-          <Typography variant="h4" style={styles.cardTitle}>
-            Enter Contest ID to View Submissions
-          </Typography>
+          {/* Empty State */}
+          {!loading && searchPerformed && submissions.length === 0 && !error && (
+            <div style={styles.emptyStateSection}>
+              <div style={styles.emptyStateTitleContainer}>
+                <span style={styles.emptyStateInlineIcon}>📭</span>
+                <Typography variant="h5" style={styles.emptyStateTitle}>
+                  No Submissions Found
+                </Typography>
+              </div>
+              <Typography variant="body1" style={styles.emptyStateMessage}>
+                This contest doesn't have any submissions yet. Participants can submit their solutions to see them here.
+              </Typography>
+            </div>
+          )}
 
-          <div style={styles.searchContainer}>
-            <TextField
-              type="text"
-              value={contestId}
-              onChange={handleContestIdChange}
-              placeholder="Enter Contest ID"
-              style={styles.input}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={fetchSubmissions}
-              style={styles.searchButton}
-            >
-              View Submissions
-            </Button>
-          </div>
+          {/* Initial State */}
+          {!searchPerformed && !loading && (
+            <div style={styles.initialStateSection}>
+              <div style={styles.initialStateTitleContainer}>
+                <span style={styles.initialStateInlineIcon}>🎯</span>
+                <Typography variant="h5" style={styles.initialStateTitle}>
+                  Ready to View Submissions
+                </Typography>
+              </div>
+              <Typography variant="body1" style={styles.initialStateMessage}>
+                Enter a contest ID above to view all participant submissions, provide feedback, and track contest performance.
+              </Typography>
+              <div style={styles.featuresGrid}>
+                <div style={styles.featureItem}>
+                  <div style={styles.featureIcon}>👥</div>
+                  <Typography variant="body2" style={styles.featureText}>
+                    View all participant submissions
+                  </Typography>
+                </div>
+                <div style={styles.featureItem}>
+                  <div style={styles.featureIcon}>⭐</div>
+                  <Typography variant="body2" style={styles.featureText}>
+                    Provide detailed feedback
+                  </Typography>
+                </div>
+                <div style={styles.featureItem}>
+                  <div style={styles.featureIcon}>📈</div>
+                  <Typography variant="body2" style={styles.featureText}>
+                    Track contest analytics
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          )}
 
           {submissions.length > 0 ? (
             <div style={styles.submissionsList}>
@@ -545,7 +692,7 @@ const ContestMode = () => {
           <div style={styles.floatingShape3}></div>
         </div>
         
-        <div style={styles.contentWrapper}>
+        <div style={{...styles.contentWrapper, padding: '15px 20px 0'}}>
           <div style={styles.header}>
             <Button
               onClick={() => setAction('')}
@@ -560,7 +707,7 @@ const ContestMode = () => {
           {action === "created" && contestCreated()}
           {action === "view-submissions" && <ContestSubmissions />}
           {action === "view-single-submission" && viewSubmissionDetails(singleSubmissionDetails)}
-          {action === "created-contests" && <CreatedContests user={user} />}
+          {action === "created-contests" && <CreatedContests user={user} editContestId={id} />}
         </div>
       </div>
     );
@@ -727,6 +874,11 @@ const themeColors = {
   text: {
     primary: '#ffffff',
     secondary: '#a1a1aa'
+  },
+  error: {
+    main: '#ef4444',
+    light: '#f87171',
+    dark: '#dc2626'
   }
 };
 
@@ -736,6 +888,8 @@ const styles = {
     background: `linear-gradient(135deg, ${themeColors.background.default} 0%, #16213e 100%)`,
     position: 'relative',
     overflow: 'hidden',
+    margin: 0,
+    padding: 0,
   },
   
   backgroundShapes: {
@@ -799,7 +953,7 @@ const styles = {
   contentWrapper: {
     position: 'relative',
     zIndex: 1,
-    padding: '0 20px',
+    padding: '90px 20px 0',
     maxWidth: '1400px',
     margin: '0 auto',
   },
@@ -808,8 +962,9 @@ const styles = {
   
   heroSection: {
     textAlign: 'center',
-    marginBottom: '80px',
-    padding: '60px 20px',
+    marginTop: '0px',
+    marginBottom: '15px',
+    padding: '10px 20px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -820,8 +975,8 @@ const styles = {
     fontSize: '48px',
     fontWeight: 800,
     color: '#ffffff',
-    marginBottom: '20px',
-    letterSpacing: '-0.02em',
+    marginBottom: '10px',
+    letterSpacing: '-0.02em', marginTop: '0px',
     lineHeight: 1.2,
     animation: 'fadeInUp 1s ease-out',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -840,7 +995,7 @@ const styles = {
   },
   
   actionsSection: {
-    marginBottom: '80px',
+    marginBottom: '40px',
   },
   
   actionGrid: {
@@ -925,7 +1080,7 @@ const styles = {
     letterSpacing: '-0.02em',
     lineHeight: 1.2,
     position: 'relative',
-    zIndex: 2,
+    zIndex: 2, 
   },
 
   // Enhanced Action Card Description with Better Readability
@@ -1044,7 +1199,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    marginBottom: '32px',
+    marginBottom: '8px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     backdropFilter: 'blur(15px)',
     WebkitBackdropFilter: 'blur(15px)',
@@ -1073,6 +1228,11 @@ const styles = {
       transform: 'translateY(-1px)',
       boxShadow: `0 8px 25px ${themeColors.primary.main}35`,
     },
+  },
+
+  header: {
+    marginBottom: '0px',
+    padding: '0px',
   },
 
   container: {
@@ -1263,23 +1423,482 @@ const styles = {
     },
   },
 
-  // Enhanced Header Section
-  header: {
-    marginBottom: '40px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: '0 20px',
+  // Premium Success Card Styles
+  successCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(30px)',
+    WebkitBackdropFilter: 'blur(30px)',
+    border: `1px solid ${themeColors.primary.main}30`,
+    borderRadius: '28px',
+    padding: '60px 48px',
+    textAlign: 'center',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+    position: 'relative',
+    overflow: 'hidden',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '3px',
+      background: `linear-gradient(90deg, ${themeColors.primary.main}, ${themeColors.secondary.main})`,
+    },
   },
 
-  // Enhanced Content Wrapper
-  contentWrapper: {
-    position: 'relative',
-    zIndex: 2,
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '40px 0',
+  successIcon: {
+    fontSize: '80px',
+    marginBottom: '24px',
+    filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+    animation: 'pulse 2s ease-in-out infinite',
   },
+
+  successTitle: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.secondary.main})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontWeight: 900,
+    fontSize: '32px',
+    marginBottom: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    letterSpacing: '-0.02em',
+    lineHeight: 1.2,
+  },
+
+  successSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '18px',
+    marginBottom: '40px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: 1.5,
+  },
+
+  idDisplayContainer: {
+    marginBottom: '40px',
+  },
+
+  idLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: '14px',
+    fontWeight: 600,
+    marginBottom: '12px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  idBox: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}15, ${themeColors.secondary.main}15)`,
+    border: `1px solid ${themeColors.primary.main}40`,
+    borderRadius: '16px',
+    padding: '20px 24px',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+  },
+
+  idText: {
+    color: '#ffffff',
+    fontWeight: 800,
+    fontSize: '24px',
+    fontFamily: 'Monaco, "Lucida Console", monospace',
+    letterSpacing: '0.1em',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+  },
+
+  buttonGroup: {
+    display: 'flex',
+    gap: '16px',
+    marginBottom: '40px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
+  copyButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '16px',
+    padding: '16px 32px',
+    fontSize: '16px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 8px 25px ${themeColors.primary.main}30`,
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: `0 15px 40px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
+  },
+
+  viewContestsButton: {
+    background: 'transparent',
+    color: '#ffffff',
+    border: `2px solid ${themeColors.primary.main}60`,
+    borderRadius: '16px',
+    padding: '14px 30px',
+    fontSize: '16px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      border: `2px solid ${themeColors.primary.main}`,
+      background: `${themeColors.primary.main}15`,
+      boxShadow: `0 8px 25px ${themeColors.primary.main}20`,
+    },
+  },
+
+  instructionsContainer: {
+    textAlign: 'left',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.02))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '16px',
+    padding: '24px',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+  },
+
+  instructionsTitle: {
+    color: '#ffffff',
+    fontSize: '16px',
+    fontWeight: 700,
+    marginBottom: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  instructionsList: {
+    margin: 0,
+    paddingLeft: '20px',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+
+  instructionItem: {
+    marginBottom: '8px',
+    fontSize: '14px',
+    lineHeight: 1.5,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  // Premium Submissions Interface Styles
+  submissionsCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(30px)',
+    WebkitBackdropFilter: 'blur(30px)',
+    border: `1px solid ${themeColors.primary.main}30`,
+    borderRadius: '28px',
+    padding: '0',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: '600px',
+  },
+
+  submissionsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+    padding: '40px 48px 32px',
+    borderBottom: `1px solid ${themeColors.primary.main}20`,
+    background: `linear-gradient(135deg, ${themeColors.primary.main}08, rgba(255, 255, 255, 0.02))`,
+  },
+
+  headerIcon: {
+    fontSize: '48px',
+    filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+  },
+
+  headerContent: {
+    flex: 1,
+  },
+
+  submissionsTitle: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.secondary.main})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontWeight: 900,
+    fontSize: '32px',
+    marginBottom: '8px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    letterSpacing: '-0.02em',
+    lineHeight: 1.2,
+  },
+
+  submissionsSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: 1.5,
+    margin: 0,
+  },
+
+  searchSection: {
+    padding: '32px 48px',
+    borderBottom: `1px solid ${themeColors.primary.main}15`,
+  },
+
+  searchInputContainer: {
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'stretch',
+  },
+
+  inputWrapper: {
+    position: 'relative',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+  },
+
+  inputIcon: {
+    position: 'absolute',
+    left: '20px',
+    fontSize: '20px',
+    zIndex: 2,
+    opacity: 0.7,
+  },
+
+  premiumSearchInput: {
+    width: '100%',
+    padding: '18px 24px 18px 56px',
+    borderRadius: '16px',
+    border: `1px solid ${themeColors.primary.main}30`,
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
+    backdropFilter: 'blur(15px)',
+    fontSize: '16px',
+    color: '#ffffff',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    '&:focus': {
+      outline: 'none',
+      border: `1px solid ${themeColors.primary.main}60`,
+      boxShadow: `0 0 0 4px ${themeColors.primary.main}15`,
+      background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.06))`,
+    },
+    '&::placeholder': {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+  },
+
+  premiumSearchButton: {
+    padding: '18px 24px',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '16px',
+    fontSize: '15px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 8px 25px ${themeColors.primary.main}30`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    minWidth: '140px',
+    justifyContent: 'center',
+    whiteSpace: 'nowrap',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 12px 35px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
+  },
+
+  loadingSpinner: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '2px solid #ffffff',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+
+  errorSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '32px 48px',
+    background: `linear-gradient(135deg, ${themeColors.error.main}15, rgba(255, 255, 255, 0.02))`,
+    border: `1px solid ${themeColors.error.main}30`,
+    borderRadius: '16px',
+    margin: '0 48px 32px',
+  },
+
+  errorIcon: {
+    fontSize: '32px',
+  },
+
+  errorContent: {
+    flex: 1,
+  },
+
+  errorTitle: {
+    color: themeColors.error.light,
+    fontWeight: 700,
+    fontSize: '18px',
+    marginBottom: '4px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  errorMessage: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '14px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: 1.5,
+    margin: 0,
+  },
+
+  emptyStateSection: {
+    textAlign: 'center',
+    padding: '80px 48px',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.02))`,
+    margin: '0 48px 32px',
+    borderRadius: '20px',
+    border: `1px solid ${themeColors.primary.main}15`,
+  },
+
+  emptyStateTitleContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    marginBottom: '16px',
+  },
+
+  emptyStateInlineIcon: {
+    fontSize: '28px',
+    opacity: 0.8,
+    filter: 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2))',
+  },
+
+  emptyStateTitle: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.secondary.main})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontWeight: 800,
+    fontSize: '28px',
+    margin: 0,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    letterSpacing: '-0.01em',
+  },
+
+  emptyStateMessage: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: 1.6,
+    maxWidth: '450px',
+    margin: '0 auto',
+  },
+
+  initialStateSection: {
+    textAlign: 'center',
+    padding: '60px 48px 80px',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.02))`,
+    margin: '0 48px 32px',
+    borderRadius: '20px',
+    border: `1px solid ${themeColors.primary.main}15`,
+  },
+
+  initialStateTitleContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    marginBottom: '16px',
+  },
+
+  initialStateInlineIcon: {
+    fontSize: '28px',
+    opacity: 0.8,
+    filter: 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2))',
+  },
+
+  initialStateTitle: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.secondary.main})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    fontWeight: 800,
+    fontSize: '28px',
+    margin: 0,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    letterSpacing: '-0.01em',
+  },
+
+  initialStateMessage: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: 1.6,
+    maxWidth: '500px',
+    margin: '0 auto 48px',
+  },
+
+  featuresGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '20px',
+    maxWidth: '700px',
+    margin: '0 auto',
+    '@media (max-width: 768px)': {
+      gridTemplateColumns: '1fr',
+      gap: '16px',
+      maxWidth: '400px',
+    },
+    '@media (max-width: 1024px) and (min-width: 769px)': {
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '18px',
+      maxWidth: '500px',
+    },
+  },
+
+  featureItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '32px 20px',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '18px',
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    cursor: 'default',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: `0 12px 30px ${themeColors.primary.main}20`,
+      border: `1px solid ${themeColors.primary.main}40`,
+    },
+  },
+
+  featureIcon: {
+    fontSize: '40px',
+    filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
+  },
+
+  featureText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: '15px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    textAlign: 'center',
+    lineHeight: 1.5,
+    margin: 0,
+    fontWeight: 500,
+  },
+
+
+
+
 };
 
 // Add CSS animations
@@ -1315,6 +1934,15 @@ styleSheet.innerText = `
     }
     50% {
       opacity: 0.8;
+    }
+  }
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
     }
   }
 `;

@@ -28,7 +28,7 @@ const themeColors = {
   }
 };
 
-const CreatedContests = ({ user }) => {
+const CreatedContests = ({ user, editContestId = null }) => {
   const [contests, setContests] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -129,6 +129,27 @@ const CreatedContests = ({ user }) => {
     fetchContests();
   }, []);
 
+  // Auto-open specific contest in edit mode when editContestId is provided
+  useEffect(() => {
+    if (editContestId && contests.length > 0) {
+      const contestToEdit = contests.find(contest => contest._id === editContestId);
+      if (contestToEdit) {
+        handleEdit(contestToEdit);
+        
+        // Scroll to the contest after a short delay to ensure DOM is updated
+        setTimeout(() => {
+          const element = document.getElementById(`contest-${editContestId}`);
+          if (element) {
+            element.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }, 100);
+      }
+    }
+  }, [editContestId, contests]);
+
   // Add CSS animations to document head
   useEffect(() => {
     const styleSheet = document.createElement('style');
@@ -191,7 +212,7 @@ const CreatedContests = ({ user }) => {
           {contests.map((contest) =>
             editId === contest._id ? (
               // Edit Mode Card with Premium Styling
-              <div key={contest._id} style={styles.editCard}>
+              <div key={contest._id} id={`contest-${contest._id}`} style={styles.editCard}>
                 <div style={styles.editCardHeader}>
                   <h3 style={styles.editCardTitle}>
                     ✏️ Editing Contest
@@ -339,7 +360,7 @@ const CreatedContests = ({ user }) => {
                       {contest.name}
                     </h3>
                     <p style={styles.contestId}>
-                      ID: {contest._id.slice(-8).toUpperCase()}
+                      ID: {contest._id}
                     </p>
                   </div>
                 </div>
@@ -434,11 +455,10 @@ const styles = {
   // Premium Page Container with Glassmorphism Background
   pageContainer: {
     minHeight: '100vh',
-    background: `linear-gradient(135deg, ${themeColors.background.default} 0%, #16213e 100%)`,
+    background: `linear-gradient(135deg, ${themeColors.background.primary} 0%, ${themeColors.background.secondary} 100%)`,
     position: 'relative',
     overflow: 'hidden',
-    paddingTop: '40px',
-    paddingBottom: '80px',
+    padding: '20px',
   },
 
   // Animated Background Shapes
@@ -491,7 +511,7 @@ const styles = {
   container: {
     position: 'relative',
     zIndex: 1,
-    padding: '0 20px',
+    padding: '0 10px',
     maxWidth: '1200px',
     margin: '0 auto',
   },
@@ -499,12 +519,12 @@ const styles = {
   // Enhanced Header Section
   headerSection: {
     textAlign: 'center',
-    marginBottom: '60px',
-    padding: '40px 20px',
+    marginBottom: '5px',
+    padding: '0px 10px',
   },
 
   pageTitle: {
-    fontSize: '42px',
+    fontSize: '42px', 
     fontWeight: 800,
     color: '#ffffff',
     marginBottom: '16px',
