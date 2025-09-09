@@ -21,6 +21,10 @@ const ContestMode = () => {
   const [name, setName] = useState("");
   const [hoveredCard, setHoveredCard] = useState(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [focusedSubmissionId, setFocusedSubmissionId] = useState(null);
+  const [persistedContestId, setPersistedContestId] = useState("");
+  const [persistedSubmissions, setPersistedSubmissions] = useState([]);
+  const [persistedSearchPerformed, setPersistedSearchPerformed] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -51,11 +55,6 @@ const ContestMode = () => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = value;
     setQuestions(updatedQuestions);
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(id);
-    alert("Contest ID copied to clipboard");
   };
 
   const handleSubmit = async (e) => {
@@ -109,6 +108,24 @@ const ContestMode = () => {
       alert("Feedback Submitted");
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  // Copy contest ID to clipboard
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(id);
+      alert('Contest ID copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = id;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Contest ID copied to clipboard!');
     }
   };
 
@@ -178,11 +195,11 @@ const ContestMode = () => {
   };
 
   const ContestSubmissions = () => {
-    const [contestId, setContestId] = React.useState("");
-    const [submissions, setSubmissions] = React.useState([]);
+    const [contestId, setContestId] = React.useState(persistedContestId);
+    const [submissions, setSubmissions] = React.useState(persistedSubmissions);
     const [error, setError] = React.useState("");
     const [loading, setLoading] = React.useState(false);
-    const [searchPerformed, setSearchPerformed] = React.useState(false);
+    const [searchPerformed, setSearchPerformed] = React.useState(persistedSearchPerformed);
 
     const [logic, setLogic] = React.useState("0");
     const [efficiency, setEfficiecny] = React.useState("0");
@@ -213,16 +230,21 @@ const ContestMode = () => {
         
         if (response.ok) {
           setSubmissions(data.data || []);
+          setPersistedSubmissions(data.data || []);
+          setPersistedContestId(contestId);
+          setPersistedSearchPerformed(true);
           if (!data.data || data.data.length === 0) {
             setError("No submissions found for this contest ID.");
           }
         } else {
           setError(data.message || "Contest not found or no submissions available.");
           setSubmissions([]);
+          setPersistedSubmissions([]);
         }
       } catch (err) {
         setError("Failed to fetch submissions. Please check the contest ID and try again.");
         setSubmissions([]);
+        setPersistedSubmissions([]);
       } finally {
         setLoading(false);
       }
@@ -358,12 +380,20 @@ const ContestMode = () => {
           {submissions.length > 0 ? (
             <div style={styles.submissionsList}>
               {submissions.map((submission) => (
-                <Card key={submission._id} variant="outlined" style={styles.submissionCard}>
+                <Card 
+                  key={submission._id} 
+                  id={`submission-${submission._id}`}
+                  variant="outlined" 
+                  style={{
+                    ...styles.submissionCard,
+                    ...(focusedSubmissionId === submission._id ? styles.focusedSubmissionCard : {})
+                  }}
+                >
                   {/* Submission Header */}
                   <div style={styles.submissionHeader}>
                     <div style={styles.submissionInfo}>
                       <div style={styles.submissionId}>
-                        #{submission._id.slice(-8).toUpperCase()}
+                        {submission._id}
                       </div>
                       <div style={styles.submissionDate}>
                         {new Date(submission.submittedAt).toLocaleDateString('en-US', {
@@ -380,6 +410,7 @@ const ContestMode = () => {
                       color="primary"
                       onClick={() => {
                         setSingleSubmissionDetails(submission);
+                        setFocusedSubmissionId(submission._id);
                         setAction("view-single-submission");
                       }}
                       style={styles.viewButton}
@@ -522,65 +553,132 @@ const ContestMode = () => {
 
   const viewSubmissionDetails = (submission) => {
     return (
-      <Container maxWidth="md" style={styles.container}>
-        <Card variant="elevated" style={styles.card}>
-          <Typography variant="h4" style={styles.cardTitle}>
-            Submission Details
-          </Typography>
-          
-          <div style={styles.submissionDetailsContainer}>
-            <div style={styles.detailItem}>
-              <Typography variant="h6" style={styles.detailLabel}>
-                Submission ID:
-              </Typography>
-              <Typography variant="body1" style={styles.detailValue}>
-                {submission._id}
-              </Typography>
-            </div>
-            
-            <div style={styles.detailItem}>
-              <Typography variant="h6" style={styles.detailLabel}>
-                Contest ID:
-              </Typography>
-              <Typography variant="body1" style={styles.detailValue}>
-                {submission.contestID}
-              </Typography>
-            </div>
-            
-            <div style={styles.detailItem}>
-              <Typography variant="h6" style={styles.detailLabel}>
-                Submitted At:
-              </Typography>
-              <Typography variant="body1" style={styles.detailValue}>
-                {new Date(submission.submittedAt).toLocaleString()}
-              </Typography>
-            </div>
-            
-            <div style={styles.answersContainer}>
-              <Typography variant="h6" style={styles.detailLabel}>
-                Answers:
-              </Typography>
-              
-              {submission.answers.map((answer, index) => (
-                <Card key={answer._id || index} variant="outlined" style={styles.answerCard}>
-                  <Typography variant="body1" style={styles.questionText}>
-                    <strong>Question {index + 1}:</strong> {answer.question}
-                  </Typography>
-                  <Typography variant="body1" style={styles.answerText}>
-                    <strong>Your Answer:</strong> {answer.answer}
-                  </Typography>
-                </Card>
-              ))}
+      <Container maxWidth="lg" style={{...styles.container, padding: '0 20px'}}>
+        <Card variant="elevated" style={{...styles.card, padding: '0', borderRadius: '24px'}}>
+          {/* Premium Header */}
+          <div style={styles.detailsHeader}>
+            <div>
+              <h1 style={styles.detailsTitle}>
+                📋 Submission Details
+              </h1>
+              <p style={styles.detailsSubtitle}>
+                Complete submission information and participant responses
+              </p>
             </div>
           </div>
           
+          {/* Content Section */}
+          <div style={styles.detailsContent}>
+            {/* Details Grid */}
+            <div style={styles.detailsGrid}>
+              <div style={styles.detailItem}>
+                <div style={styles.detailLabel}>
+                  Submission ID
+                </div>
+                <div style={styles.detailValue}>
+                  {submission._id}
+                </div>
+              </div>
+              
+              <div style={styles.detailItem}>
+                <div style={styles.detailLabel}>
+                  Contest ID
+                </div>
+                <div style={styles.detailValue}>
+                  {submission.contestID}
+                </div>
+              </div>
+              
+              <div style={styles.detailItem}>
+                <div style={styles.detailLabel}>
+                  Submitted At
+                </div>
+                <div style={styles.detailValue}>
+                  {new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
+                </div>
+              </div>
+              
+              <div style={styles.detailItem}>
+                <div style={styles.detailLabel}>
+                  Total Questions
+                </div>
+                <div style={styles.detailValue}>
+                  {submission.answers.length} Questions
+                </div>
+              </div>
+            </div>
+            
+            {/* Answers Section */}
+            <div style={styles.answersSection}>
+              <h2 style={styles.answersSectionTitle}>
+                📝 Participant Responses
+              </h2>
+              
+              <div style={styles.answersGrid}>
+                {submission.answers.map((answer, index) => (
+                  <Card key={answer._id || index} variant="outlined" style={styles.answerCard}>
+                    {/* Question Header */}
+                    <div style={styles.answerCardHeader}>
+                      <div style={styles.questionText}>
+                        Question {index + 1}
+                      </div>
+                    </div>
+                    
+                    {/* Answer Content */}
+                    <div style={styles.answerCardContent}>
+                      <div style={{marginBottom: '16px'}}>
+                        <div style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px', fontWeight: 600, marginBottom: '8px'}}>
+                          QUESTION:
+                        </div>
+                        <div style={{color: '#ffffff', fontSize: '16px', lineHeight: 1.6, marginBottom: '20px'}}>
+                          {answer.question}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px', fontWeight: 600, marginBottom: '8px'}}>
+                          PARTICIPANT ANSWER:
+                        </div>
+                        <div style={styles.answerText}>
+                          {answer.answer || 'No answer provided'}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Back Button */}
           <Button
             variant="contained"
             color="primary"
-            onClick={() => setAction("view-submissions")}
-            style={styles.backButton}
+            onClick={() => {
+              setAction("view-submissions");
+              // Keep the focused submission ID for highlighting
+              // It will be cleared after scroll animation
+              setTimeout(() => {
+                if (focusedSubmissionId) {
+                  const element = document.getElementById(`submission-${focusedSubmissionId}`);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Clear focus after scroll animation completes
+                    setTimeout(() => setFocusedSubmissionId(null), 2000);
+                  }
+                }
+              }, 100);
+            }}
+            style={styles.detailsBackButton}
           >
-            Back to Submissions
+            ← Back to Submissions
           </Button>
         </Card>
       </Container>
@@ -2154,6 +2252,184 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
+  // Premium Submission Details Styles
+  submissionDetailsContainer: {
+    padding: '0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '32px',
+  },
+
+  detailsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '32px 48px 24px',
+    borderBottom: `1px solid ${themeColors.primary.main}20`,
+    background: `linear-gradient(135deg, ${themeColors.primary.main}08, rgba(255, 255, 255, 0.02))`,
+  },
+
+  detailsTitle: {
+    color: '#ffffff',
+    fontSize: '32px',
+    fontWeight: 800,
+    margin: 0,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.secondary.light})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+  },
+
+  detailsSubtitle: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: '16px',
+    fontWeight: 500,
+    margin: '8px 0 0 0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  detailsContent: {
+    padding: '32px 48px 48px',
+  },
+
+  detailsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '24px',
+    marginBottom: '40px',
+  },
+
+  detailItem: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '16px',
+    padding: '24px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:hover': {
+      border: `1px solid ${themeColors.primary.main}30`,
+      background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    },
+  },
+
+  detailLabel: {
+    color: themeColors.primary.light,
+    fontSize: '14px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: '8px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  detailValue: {
+    color: '#ffffff',
+    fontSize: '18px',
+    fontWeight: 600,
+    lineHeight: 1.4,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    wordBreak: 'break-all',
+  },
+
+  answersSection: {
+    marginTop: '40px',
+  },
+
+  answersSectionTitle: {
+    color: '#ffffff',
+    fontSize: '24px',
+    fontWeight: 700,
+    marginBottom: '24px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+
+  answersGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+  },
+
+  answerCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
+    border: `1px solid ${themeColors.secondary.main}20`,
+    borderRadius: '16px',
+    padding: '0',
+    overflow: 'hidden',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 12px 30px ${themeColors.secondary.main}15`,
+      border: `1px solid ${themeColors.secondary.main}30`,
+    },
+  },
+
+  answerCardHeader: {
+    background: `linear-gradient(135deg, ${themeColors.secondary.main}10, rgba(255, 255, 255, 0.02))`,
+    padding: '20px 24px',
+    borderBottom: `1px solid ${themeColors.secondary.main}15`,
+  },
+
+  answerCardContent: {
+    padding: '24px',
+  },
+
+  questionText: {
+    color: themeColors.secondary.light,
+    fontSize: '16px',
+    fontWeight: 700,
+    marginBottom: '0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  answerText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: '16px',
+    fontWeight: 500,
+    lineHeight: 1.6,
+    margin: '0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))`,
+    padding: '16px 20px',
+    borderRadius: '12px',
+    border: `1px solid rgba(255, 255, 255, 0.1)`,
+  },
+
+  detailsBackButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '16px',
+    padding: '16px 32px',
+    fontSize: '16px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 8px 25px ${themeColors.primary.main}30`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    margin: '32px 48px 0',
+    width: 'fit-content',
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: `0 12px 35px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
+  },
+
+  // Focused Submission Card Styling
+  focusedSubmissionCard: {
+    border: `2px solid ${themeColors.primary.main}`,
+    boxShadow: `0 0 0 4px ${themeColors.primary.main}20, 0 16px 40px ${themeColors.primary.main}25`,
+    transform: 'translateY(-2px)',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.08))`,
+    animation: 'focusPulse 2s ease-in-out',
+  },
+
 
 
 
@@ -2221,6 +2497,19 @@ styleSheet.innerText = `
   select option:checked {
     background-color: #6366f1 !important;
     color: #ffffff !important;
+  }
+  
+  /* Focus Pulse Animation */
+  @keyframes focusPulse {
+    0% {
+      box-shadow: 0 0 0 4px ${themeColors.primary.main}20, 0 16px 40px ${themeColors.primary.main}25;
+    }
+    50% {
+      box-shadow: 0 0 0 8px ${themeColors.primary.main}30, 0 20px 50px ${themeColors.primary.main}35;
+    }
+    100% {
+      box-shadow: 0 0 0 4px ${themeColors.primary.main}20, 0 16px 40px ${themeColors.primary.main}25;
+    }
   }
 `;
 document.head.appendChild(styleSheet);
