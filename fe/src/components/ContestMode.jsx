@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import CreatedContests from "./CreatedContests";
-import { Button, Card, Container, Typography, TextField, Select, Grid } from './ui';
+import { Button, Card, Container, Typography, TextField, Grid } from './ui';
 import CommonNavbar from './CommonNavbar';
 import { colors, shadows } from '../theme';
 import logoImage from '../assets/logo (2).jpeg';
@@ -359,14 +359,22 @@ const ContestMode = () => {
             <div style={styles.submissionsList}>
               {submissions.map((submission) => (
                 <Card key={submission._id} variant="outlined" style={styles.submissionCard}>
-                  <Typography variant="body1" style={styles.submissionText}>
-                    <strong>Submission ID:</strong> {submission._id}
-                  </Typography>
-                  <Typography variant="body1" style={styles.submissionText}>
-                    <strong>Submitted At:</strong> {new Date(submission.submittedAt).toLocaleString()}
-                  </Typography>
-                  
-                  <div style={styles.submissionActions}>
+                  {/* Submission Header */}
+                  <div style={styles.submissionHeader}>
+                    <div style={styles.submissionInfo}>
+                      <div style={styles.submissionId}>
+                        #{submission._id.slice(-8).toUpperCase()}
+                      </div>
+                      <div style={styles.submissionDate}>
+                        {new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
                     <Button
                       variant="contained"
                       color="primary"
@@ -376,9 +384,12 @@ const ContestMode = () => {
                       }}
                       style={styles.viewButton}
                     >
-                      View Submission
+                      📋 View Details
                     </Button>
                   </div>
+
+                  {/* Submission Content */}
+                  <div style={styles.submissionContent}>
 
                   {'reviewedBy' in submission ? (
                     <div style={styles.feedbackContainer}>
@@ -413,7 +424,7 @@ const ContestMode = () => {
                           <Grid item xs={6}>
                             <div style={styles.selectContainer}>
                               <label htmlFor="logic" style={styles.selectLabel}>Logic</label>
-                              <Select
+                              <select
                                 id="logic"
                                 value={logic}
                                 onChange={(e) => setLogic(e.target.value)}
@@ -422,13 +433,13 @@ const ContestMode = () => {
                                 {[0, 1, 2, 3, 4, 5].map((value) => (
                                   <option key={value} value={value.toString()}>{value}</option>
                                 ))}
-                              </Select>
+                              </select>
                             </div>
                           </Grid>
                           <Grid item xs={6}>
                             <div style={styles.selectContainer}>
                               <label htmlFor="efficiency" style={styles.selectLabel}>Efficiency</label>
-                              <Select
+                              <select
                                 id="efficiency"
                                 value={efficiency}
                                 onChange={(e) => setEfficiecny(e.target.value)}
@@ -437,13 +448,13 @@ const ContestMode = () => {
                                 {[0, 1, 2, 3, 4, 5].map((value) => (
                                   <option key={value} value={value.toString()}>{value}</option>
                                 ))}
-                              </Select>
+                              </select>
                             </div>
                           </Grid>
                           <Grid item xs={6}>
                             <div style={styles.selectContainer}>
                               <label htmlFor="codingStyle" style={styles.selectLabel}>Coding Style</label>
-                              <Select
+                              <select
                                 id="codingStyle"
                                 value={codingStyle}
                                 onChange={(e) => setCodingStyle(e.target.value)}
@@ -452,13 +463,13 @@ const ContestMode = () => {
                                 {[0, 1, 2, 3, 4, 5].map((value) => (
                                   <option key={value} value={value.toString()}>{value}</option>
                                 ))}
-                              </Select>
+                              </select>
                             </div>
                           </Grid>
                           <Grid item xs={6}>
                             <div style={styles.selectContainer}>
                               <label htmlFor="clarity" style={styles.selectLabel}>Clarity</label>
-                              <Select
+                              <select
                                 id="clarity"
                                 value={clarity}
                                 onChange={(e) => setClarity(e.target.value)}
@@ -467,7 +478,7 @@ const ContestMode = () => {
                                 {[0, 1, 2, 3, 4, 5].map((value) => (
                                   <option key={value} value={value.toString()}>{value}</option>
                                 ))}
-                              </Select>
+                              </select>
                             </div>
                           </Grid>
                         </Grid>
@@ -495,6 +506,7 @@ const ContestMode = () => {
                       </form>
                     </div>
                   )}
+                  </div>
                 </Card>
               ))}
             </div>
@@ -953,7 +965,7 @@ const styles = {
   contentWrapper: {
     position: 'relative',
     zIndex: 1,
-    padding: '90px 20px 0',
+    padding: '0 20px',
     maxWidth: '1400px',
     margin: '0 auto',
   },
@@ -962,7 +974,7 @@ const styles = {
   
   heroSection: {
     textAlign: 'center',
-    marginTop: '0px',
+    marginTop: '90px',
     marginBottom: '15px',
     padding: '10px 20px',
     display: 'flex',
@@ -1666,13 +1678,14 @@ const styles = {
 
   premiumSearchInput: {
     width: '100%',
-    padding: '18px 24px 18px 56px',
+    padding: '16px 24px 16px 56px',
     borderRadius: '16px',
     border: `1px solid ${themeColors.primary.main}30`,
     background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
     backdropFilter: 'blur(15px)',
     fontSize: '16px',
     color: '#ffffff',
+    boxSizing: 'border-box',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     '&:focus': {
@@ -1687,12 +1700,12 @@ const styles = {
   },
 
   premiumSearchButton: {
-    padding: '18px 24px',
+    padding: '16px 20px',
     background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
     color: '#ffffff',
     border: 'none',
     borderRadius: '16px',
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -1896,6 +1909,251 @@ const styles = {
     fontWeight: 500,
   },
 
+  // Premium Submissions List Styles
+  submissionsList: {
+    padding: '32px 48px 48px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+
+  submissionCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '20px',
+    padding: '0',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: `0 16px 40px ${themeColors.primary.main}20`,
+      border: `1px solid ${themeColors.primary.main}40`,
+    },
+  },
+
+  submissionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '24px 32px',
+    borderBottom: `1px solid ${themeColors.primary.main}15`,
+    background: `linear-gradient(135deg, ${themeColors.primary.main}08, rgba(255, 255, 255, 0.02))`,
+  },
+
+  submissionInfo: {
+    flex: 1,
+  },
+
+  submissionId: {
+    color: themeColors.primary.light,
+    fontSize: '18px',
+    fontWeight: 700,
+    marginBottom: '4px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  submissionDate: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: '14px',
+    fontWeight: 500,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  submissionContent: {
+    padding: '24px 32px 32px',
+  },
+
+  submissionText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    marginBottom: '12px',
+    lineHeight: 1.5,
+  },
+
+  submissionActions: {
+    marginTop: '24px',
+    marginBottom: '24px',
+  },
+
+  viewButton: {
+    background: `linear-gradient(135deg, ${themeColors.secondary.main}, ${themeColors.secondary.dark})`,
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 20px',
+    fontSize: '13px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 4px 15px ${themeColors.secondary.main}30`,
+    whiteSpace: 'nowrap',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 8px 25px ${themeColors.secondary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.secondary.light}, ${themeColors.secondary.main})`,
+    },
+  },
+
+  feedbackContainer: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}10, rgba(255, 255, 255, 0.03))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '16px',
+    padding: '24px',
+    marginTop: '20px',
+  },
+
+  reviewedBy: {
+    color: themeColors.primary.light,
+    fontSize: '16px',
+    fontWeight: 600,
+    marginBottom: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  ratingContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '12px',
+    marginBottom: '16px',
+  },
+
+  ratingItem: {
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))`,
+    border: `1px solid ${themeColors.primary.main}15`,
+    borderRadius: '8px',
+    padding: '8px 12px',
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: '14px',
+    fontWeight: 500,
+    textAlign: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  additionalFeedback: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '14px',
+    fontStyle: 'italic',
+    lineHeight: 1.5,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  feedbackFormContainer: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '16px',
+    padding: '24px',
+    marginTop: '20px',
+  },
+
+  feedbackTitle: {
+    color: '#ffffff',
+    fontSize: '18px',
+    fontWeight: 700,
+    marginBottom: '20px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  feedbackGrid: {
+    marginBottom: '24px',
+    '& .MuiGrid-item': {
+      paddingBottom: '16px',
+    },
+  },
+
+  selectContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    position: 'relative',
+    zIndex: 1,
+    marginBottom: '16px',
+  },
+
+  selectLabel: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  select: {
+    padding: '12px 16px',
+    background: '#1a1a2e',
+    border: `2px solid ${themeColors.primary.main}40`,
+    borderRadius: '8px',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    width: '100%',
+    position: 'relative',
+    zIndex: 10,
+    '&:focus': {
+      outline: 'none',
+      border: `2px solid ${themeColors.primary.main}`,
+      boxShadow: `0 0 0 3px ${themeColors.primary.main}25`,
+      zIndex: 20,
+    },
+  },
+
+  customFeedback: {
+    width: '100%',
+    padding: '16px 20px',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    border: `1px solid ${themeColors.primary.main}30`,
+    borderRadius: '12px',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    minHeight: '80px',
+    resize: 'vertical',
+    marginBottom: '20px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:focus': {
+      outline: 'none',
+      border: `1px solid ${themeColors.primary.main}60`,
+      boxShadow: `0 0 0 3px ${themeColors.primary.main}15`,
+    },
+    '&::placeholder': {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+  },
+
+  submitFeedbackButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px 28px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 6px 20px ${themeColors.primary.main}30`,
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 10px 30px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
+  },
+
+  noSubmissions: {
+    textAlign: 'center',
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: '16px',
+    fontStyle: 'italic',
+    padding: '40px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
 
 
 
@@ -1944,6 +2202,25 @@ styleSheet.innerText = `
     100% {
       transform: rotate(360deg);
     }
+  }
+  
+  /* Dropdown Options Styling */
+  select option {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    border: none !important;
+  }
+  
+  select option:hover {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
+  }
+  
+  select option:checked {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
   }
 `;
 document.head.appendChild(styleSheet);
