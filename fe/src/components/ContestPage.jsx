@@ -1,11 +1,35 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Container, Typography, Button, Card, TextField } from './ui';
 import { colors, shadows } from '../theme';
 
+// Premium Theme Colors
+const themeColors = {
+  primary: {
+    main: '#6366f1',
+    light: '#818cf8',
+    dark: '#4f46e5'
+  },
+  secondary: {
+    main: '#ec4899',
+    light: '#f472b6',
+    dark: '#db2777'
+  },
+  background: {
+    default: '#0f0f23',
+    paper: '#1a1a2e',
+    glass: 'rgba(255, 255, 255, 0.1)'
+  },
+  text: {
+    primary: '#ffffff',
+    secondary: '#a1a1aa'
+  }
+};
+
 const ContestPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const attemptid = id;
   const [contestDetails, setContestDetails] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -14,6 +38,7 @@ const ContestPage = () => {
   const [attemptInProgress, setAttemptInProgress] = useState(false);
   const [submissionDone, setSubmissionDone] = useState(false); // Track if submission is done
   const [submitting, setSubmitting] = useState(false); // Track submission in progress
+  const [redirectCountdown, setRedirectCountdown] = useState(5); // 5 second countdown
 
   const handleSubmit = useCallback(async () => {
     if (submitting || submissionDone) {
@@ -104,6 +129,23 @@ const ContestPage = () => {
     return () => clearInterval(interval); // Cleanup
   }, [attemptInProgress, timer, attemptid]);
 
+  // Countdown and redirect logic for thank you page
+  useEffect(() => {
+    if (submissionDone && redirectCountdown > 0) {
+      const countdownInterval = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            navigate('/mode/contest-mode');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
+    }
+  }, [submissionDone, redirectCountdown, navigate]);
+
   useEffect(() => {
     if (timer <= 0 && attemptInProgress) {
       console.log('⏰ Timer expired! Auto-submitting...');
@@ -152,34 +194,85 @@ const ContestPage = () => {
   
   if (submissionDone) {
     return (
-      <Container maxWidth="md" style={styles.thankYouContainer}>
-        <Typography variant="h2" style={styles.thankYouText}>
-          Thank You
-        </Typography>
-      </Container>
+      <div style={styles.thankYouContainer}>
+        {/* Animated Background Shapes */}
+        <div style={styles.backgroundShapes}>
+          <div style={styles.floatingShape1}></div>
+          <div style={styles.floatingShape2}></div>
+          <div style={styles.floatingShape3}></div>
+        </div>
+        
+        {/* Thank You Content */}
+        <div style={styles.thankYouContent}>
+          <div style={styles.successIcon}>
+            🎉
+          </div>
+          
+          <Typography variant="h2" style={styles.thankYouText}>
+            Thank You!
+          </Typography>
+          
+          <Typography variant="body1" style={styles.thankYouSubtext}>
+            Your submission has been recorded successfully.
+          </Typography>
+          
+          <div style={styles.redirectInfo}>
+            <Typography variant="body2" style={styles.redirectText}>
+              Redirecting to Contest Mode in
+            </Typography>
+            <div style={styles.countdownTimer}>
+              {redirectCountdown}
+            </div>
+            <Typography variant="body2" style={styles.redirectText}>
+              seconds...
+            </Typography>
+          </div>
+          
+          <Button
+            variant="contained"
+            onClick={() => navigate('/mode/contest-mode')}
+            style={styles.backToContestButton}
+          >
+            ← Back to Contest Mode Now
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
     <div style={styles.pageContainer}>
+      {/* Animated Background Shapes */}
+      <div style={styles.backgroundShapes}>
+        <div style={styles.floatingShape1}></div>
+        <div style={styles.floatingShape2}></div>
+        <div style={styles.floatingShape3}></div>
+      </div>
+
+      {/* Premium Header */}
       <div style={styles.header}>
         <Typography variant="h4" style={styles.headerText}>
-          Contest
+          🏆 Contest Arena
         </Typography>
       </div>
 
       <div style={styles.contentContainer}>
-        {/* Left Side - Timer and Submit */}
+        {/* Premium Side Panel - Timer and Controls */}
         <Card variant="outlined" style={styles.sidePanel}>
-          <Typography variant="h4" style={styles.timerText}>
-            {formatTime(timer)}
-          </Typography>
-          
-          {timer <= 70 && timer > 0 && (
-            <Typography variant="body1" color="error" style={styles.hurryText}>
-              Hurry up!
-            </Typography>
-          )}
+          {/* Timer Container */}
+          <div style={styles.timerContainer}>
+            <div style={styles.timerLabel}>
+              Time Remaining
+            </div>
+            <div style={styles.timerText}>
+              {formatTime(timer)}
+            </div>
+            {timer <= 70 && timer > 0 && (
+              <div style={styles.hurryText}>
+                ⚡ Hurry up!
+              </div>
+            )}
+          </div>
           
           {!attemptInProgress ? (
             <Button
@@ -209,19 +302,20 @@ const ContestPage = () => {
 
         {/* Main Content - Questions and Answers */}
         <div style={styles.mainContent}>
-          {/* Question Navigation */}
+          {/* Premium Question Navigation */}
           {attemptInProgress && (
             <div style={styles.questionNav}>
               {contestDetails.questions.map((question, index) => (
-                <Button
+                <button
                   key={index}
-                  variant={currentQuestionIndex === index ? "contained" : "outlined"}
-                  color="primary"
                   onClick={() => handleQuestionChange(index)}
-                  style={styles.questionButton}
+                  style={{
+                    ...styles.questionButton,
+                    ...(currentQuestionIndex === index ? styles.questionButtonActive : {})
+                  }}
                 >
-                  Question {index + 1}
-                </Button>
+                  📝 Q{index + 1}
+                </button>
               ))}
             </div>
           )}
@@ -261,118 +355,447 @@ const ContestPage = () => {
 };
 
 const styles = {
+  // Premium Page Container
   pageContainer: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    backgroundColor: colors.background.default,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    background: `linear-gradient(135deg, ${themeColors.background.default}, #16213e)`,
+    position: 'relative',
+    overflow: 'hidden',
   },
+
+  // Animated Background Shapes
+  backgroundShapes: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+
+  floatingShape1: {
+    position: 'absolute',
+    top: '10%',
+    left: '10%',
+    width: '200px',
+    height: '200px',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}15, ${themeColors.secondary.main}10)`,
+    borderRadius: '50%',
+    filter: 'blur(40px)',
+    animation: 'float 6s ease-in-out infinite',
+  },
+
+  floatingShape2: {
+    position: 'absolute',
+    top: '60%',
+    right: '15%',
+    width: '150px',
+    height: '150px',
+    background: `linear-gradient(135deg, ${themeColors.secondary.main}15, ${themeColors.primary.main}10)`,
+    borderRadius: '50%',
+    filter: 'blur(30px)',
+    animation: 'float 8s ease-in-out infinite reverse',
+  },
+
+  floatingShape3: {
+    position: 'absolute',
+    bottom: '20%',
+    left: '20%',
+    width: '100px',
+    height: '100px',
+    background: `linear-gradient(135deg, ${themeColors.primary.light}20, ${themeColors.secondary.light}15)`,
+    borderRadius: '50%',
+    filter: 'blur(25px)',
+    animation: 'float 10s ease-in-out infinite',
+  },
+
+  // Premium Header
   header: {
-    backgroundColor: colors.primary.main,
-    color: colors.background.paper,
-    padding: "16px 24px",
-    textAlign: "center",
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(25px)',
+    WebkitBackdropFilter: 'blur(25px)',
+    border: `1px solid ${themeColors.primary.main}20`,
+    color: themeColors.text.primary,
+    padding: '20px 32px',
+    textAlign: 'center',
+    position: 'relative',
+    zIndex: 10,
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
   },
+
   headerText: {
-    fontWeight: 700,
-    color: colors.background.paper,
+    fontWeight: 800,
+    fontSize: '24px',
+    color: themeColors.text.primary,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.secondary.light})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
   },
+
+  // Content Container
   contentContainer: {
-    display: "flex",
+    display: 'flex',
     flex: 1,
-    padding: "24px",
+    padding: '32px',
+    gap: '32px',
+    position: 'relative',
+    zIndex: 5,
   },
+
+  // Premium Side Panel
   sidePanel: {
-    width: "250px",
-    padding: "24px",
-    boxShadow: shadows.medium,
-    borderRadius: "12px",
-    marginRight: "24px",
-    height: "fit-content",
+    width: '320px',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '24px',
+    padding: '32px',
+    height: 'fit-content',
+    position: 'sticky',
+    top: '32px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.15)',
   },
+
+  // Timer Styling
+  timerContainer: {
+    textAlign: 'center',
+    marginBottom: '32px',
+    padding: '24px',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}10, rgba(255, 255, 255, 0.02))`,
+    borderRadius: '16px',
+    border: `1px solid ${themeColors.primary.main}20`,
+  },
+
+  timerLabel: {
+    color: themeColors.primary.light,
+    fontSize: '14px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: '8px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
   timerText: {
-    textAlign: "center",
-    color: colors.primary.main,
-    fontWeight: 700,
-    marginBottom: "16px",
+    color: themeColors.text.primary,
+    fontSize: '32px',
+    fontWeight: 800,
+    fontFamily: 'monospace',
+    textShadow: `0 0 20px ${themeColors.primary.main}30`,
   },
+
   hurryText: {
-    textAlign: "center",
-    fontWeight: 700,
-    marginBottom: "16px",
-  },
-  actionButton: {
-    width: "100%",
-    marginTop: "16px",
-    padding: "12px",
+    color: themeColors.secondary.light,
+    fontSize: '16px',
     fontWeight: 600,
+    marginTop: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
+
+  // Premium Action Button
+  actionButton: {
+    width: '100%',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: themeColors.text.primary,
+    border: 'none',
+    borderRadius: '16px',
+    padding: '16px 24px',
+    fontSize: '16px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 8px 25px ${themeColors.primary.main}30`,
+    position: 'relative',
+    overflow: 'hidden',
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: `0 12px 35px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
+    '&:disabled': {
+      opacity: 0.6,
+      cursor: 'not-allowed',
+      transform: 'none',
+    },
+  },
+
+  // Main Content Area
   mainContent: {
     flex: 1,
-    display: "flex",
-    flexDirection: "column",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
   },
+
+  // Question Navigation
   questionNav: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    marginBottom: "24px",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '16px',
+    marginBottom: '32px',
   },
+
   questionButton: {
-    flex: "1 0 20%",
-    padding: "12px",
-  },
-  questionCard: {
-    padding: "24px",
-    marginBottom: "24px",
-    boxShadow: shadows.small,
-    borderRadius: "12px",
-  },
-  questionTitle: {
-    color: colors.primary.main,
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.03))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '12px',
+    padding: '12px 16px',
+    color: themeColors.text.secondary,
+    fontSize: '14px',
     fontWeight: 600,
-    marginBottom: "16px",
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    '&:hover': {
+      border: `1px solid ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+      transform: 'translateY(-2px)',
+    },
   },
+
+  questionButtonActive: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    border: `1px solid ${themeColors.primary.main}`,
+    color: themeColors.text.primary,
+    boxShadow: `0 6px 20px ${themeColors.primary.main}30`,
+  },
+
+  // Premium Question Card
+  questionCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${themeColors.secondary.main}25`,
+    borderRadius: '20px',
+    padding: '32px',
+    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  questionTitle: {
+    color: themeColors.secondary.light,
+    fontSize: '24px',
+    fontWeight: 700,
+    marginBottom: '20px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
   questionText: {
-    color: colors.text.primary,
-    fontSize: "16px",
+    color: themeColors.text.primary,
+    fontSize: '18px',
+    lineHeight: 1.7,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  // Premium Answer Card
+  answerCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '20px',
+    padding: '32px',
+    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
+  },
+
+  answerTitle: {
+    color: themeColors.primary.light,
+    fontSize: '20px',
+    fontWeight: 700,
+    marginBottom: '20px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  answerInput: {
+    width: '100%',
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))`,
+    border: `1px solid ${themeColors.primary.main}20`,
+    borderRadius: '12px',
+    padding: '16px 20px',
+    color: themeColors.text.primary,
+    fontSize: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    resize: 'vertical',
+    minHeight: '200px',
+    '&:focus': {
+      outline: 'none',
+      border: `1px solid ${themeColors.primary.main}60`,
+      boxShadow: `0 0 0 3px ${themeColors.primary.main}15`,
+    },
+    '&::placeholder': {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+  },
+
+  // Status Pages
+  notFoundContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    background: `linear-gradient(135deg, ${themeColors.background.default}, #16213e)`,
+  },
+
+  notFoundText: {
+    fontSize: '24px',
+    fontWeight: 700,
+    color: themeColors.primary.light,
+    textAlign: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  // Premium Thank You Page
+  thankYouContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    width: '100vw',
+    background: `linear-gradient(135deg, ${themeColors.background.default}, #16213e)`,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  thankYouContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(25px)',
+    WebkitBackdropFilter: 'blur(25px)',
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '32px',
+    padding: '64px 48px',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+    position: 'relative',
+    zIndex: 10,
+    maxWidth: '500px',
+    width: '90%',
+  },
+
+  successIcon: {
+    fontSize: '80px',
+    marginBottom: '24px',
+    animation: 'bounce 2s infinite',
+  },
+
+  thankYouText: {
+    fontSize: '48px',
+    fontWeight: 800,
+    color: themeColors.text.primary,
+    textAlign: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.secondary.light})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    marginBottom: '16px',
+  },
+
+  thankYouSubtext: {
+    fontSize: '18px',
+    fontWeight: 500,
+    color: themeColors.text.secondary,
+    textAlign: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    marginBottom: '40px',
     lineHeight: 1.6,
   },
-  answerCard: {
-    padding: "24px",
-    boxShadow: shadows.small,
-    borderRadius: "12px",
+
+  redirectInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    marginBottom: '32px',
+    padding: '16px 24px',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}10, rgba(255, 255, 255, 0.02))`,
+    borderRadius: '16px',
+    border: `1px solid ${themeColors.primary.main}20`,
   },
-  answerTitle: {
-    color: colors.primary.main,
+
+  redirectText: {
+    fontSize: '16px',
     fontWeight: 600,
-    marginBottom: "16px",
+    color: themeColors.text.secondary,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
-  answerInput: {
-    width: "100%",
+
+  countdownTimer: {
+    fontSize: '24px',
+    fontWeight: 800,
+    color: themeColors.primary.light,
+    fontFamily: 'monospace',
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    textShadow: `0 0 20px ${themeColors.primary.main}30`,
+    minWidth: '32px',
+    textAlign: 'center',
   },
-  notFoundContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-  },
-  notFoundText: {
+
+  backToContestButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: themeColors.text.primary,
+    border: 'none',
+    borderRadius: '16px',
+    padding: '16px 32px',
+    fontSize: '16px',
     fontWeight: 700,
-    color: colors.primary.main,
-    textAlign: "center",
-  },
-  thankYouContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-  },
-  thankYouText: {
-    fontWeight: 700,
-    color: colors.primary.main,
-    textAlign: "center",
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 8px 25px ${themeColors.primary.main}30`,
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: `0 12px 35px ${themeColors.primary.main}40`,
+      background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
+    },
   },
 };
+
+// Add CSS animations
+const styleSheet = document.createElement('style');
+styleSheet.type = 'text/css';
+styleSheet.innerText = `
+  @keyframes float {
+    0% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+      transform: translateY(-20px) rotate(120deg);
+    }
+    66% {
+      transform: translateY(10px) rotate(240deg);
+    }
+    100% {
+      transform: translateY(0px) rotate(360deg);
+    }
+  }
+  
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-20px);
+    }
+    60% {
+      transform: translateY(-10px);
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default ContestPage;
