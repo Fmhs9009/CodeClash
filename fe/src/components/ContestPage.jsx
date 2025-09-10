@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Container, Typography, Button, Card, TextField } from './ui';
 import { colors, shadows } from '../theme';
+import { buildApiUrl } from '../config/api.js';
 
 // Premium Theme Colors
 const themeColors = {
@@ -66,7 +67,7 @@ const ContestPage = () => {
 
     try {
       console.log('📡 Sending request to backend...');
-      const response = await axios.post("http://localhost:4444/createSubmission", submissionData);
+      const response = await axios.post(buildApiUrl('/createSubmission'), submissionData);
       console.log('✅ Response received:', response);
       
       if (response.status === 201 || response.status === 200) {
@@ -95,7 +96,7 @@ const ContestPage = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:4444/getContest?id=${attemptid}`)
+      .get(buildApiUrl(`/getContest?id=${attemptid}`))
       .then((response) => {
         const data = response.data.details;
         setContestDetails(data);

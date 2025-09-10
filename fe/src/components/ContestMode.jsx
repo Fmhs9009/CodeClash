@@ -7,6 +7,7 @@ import { Button, Card, Container, Typography, TextField, Grid } from './ui';
 import CommonNavbar from './CommonNavbar';
 import { colors, shadows } from '../theme';
 import logoImage from '../assets/logo (2).jpeg';
+import { buildApiUrl } from '../config/api.js';
 
 const ContestMode = () => {
   const { user, logout } = useAuth0();
@@ -67,7 +68,7 @@ const ContestMode = () => {
     } else {
       console.log("axiioossssss");
       await axios
-        .post("http://localhost:4444/createContest", {
+        .post(buildApiUrl('/createContest'), {
           name,
           time,
           numQuestions,
@@ -94,7 +95,7 @@ const ContestMode = () => {
       custom,
     };
     try {
-      await fetch('http://localhost:4444/feedback', {
+      await fetch(buildApiUrl('/feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +225,7 @@ const ContestMode = () => {
 
       try {
         const response = await fetch(
-          `http://localhost:4444/getSubmission?id=${contestId}`
+          buildApiUrl(`/getSubmission?id=${contestId}`)
         );
         const data = await response.json();
         

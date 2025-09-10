@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-// const KEY = import.meta.env.VITE_JUDGE0_API_KEY; // Fetch API key from .env
-const KEY = 'df275444c3mshe175bad7459e6f1p16a68ejsn8ae31e5fe911';
+// Fetch API key from environment variables only
+const KEY = import.meta.env.VITE_JUDGE0_API_KEY;
+
+if (!KEY) {
+  console.error('❌ VITE_JUDGE0_API_KEY environment variable is required');
+  throw new Error('Judge0 API key not found in environment variables');
+}
 
 const createSubmission = async (id, code, stdinput) => {
   console.log(id, code, stdinput);

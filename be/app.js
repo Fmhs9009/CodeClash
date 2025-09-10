@@ -4,21 +4,31 @@ import router from './router/router.js';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 
 
 const app = express();
-const API_PORT = 4444; // REST API port
-const SOCKET_PORT = 3000; // WebSocket server port
+// Use environment variables for configuration
+const API_PORT = process.env.API_PORT || 4444; // REST API port
+const SOCKET_PORT = process.env.SOCKET_PORT || 3000; // WebSocket server port
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mydb';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true
+}));
 app.use('/', router);
 
 // Database Connection
-mongoose.connect('mongodb://127.0.0.1:27017/mydb')
+mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('✅ Connected to MongoDB successfully');
         app.listen(API_PORT, () => {
@@ -35,7 +45,12 @@ mongoose.connect('mongodb://127.0.0.1:27017/mydb')
 
 // WebSocket Server
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: '*', credentials: true } });
+const io = new Server(server, { 
+  cors: { 
+    origin: CORS_ORIGIN, 
+    credentials: true 
+  } 
+});
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);

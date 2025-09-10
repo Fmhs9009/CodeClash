@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth0 } from '@auth0/auth0-react';
 
 // Premium Theme Colors matching ContestMode.jsx
 const themeColors = {
@@ -43,7 +44,7 @@ const CreatedContests = ({ user, editContestId = null }) => {
   // Fetch contests created by the user
   const fetchContests = async () => {
     try {
-      const response = await fetch("http://localhost:4444/viewContests", {
+      const response = await fetch(buildApiUrl('/viewContests'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +87,7 @@ const CreatedContests = ({ user, editContestId = null }) => {
   // Submit the edit form
   const submitEdit = async (id) => {
     try {
-      const response = await fetch(`http://localhost:4444/editContest`, {
+      const response = await fetch(buildApiUrl('/editContest'), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +112,7 @@ const CreatedContests = ({ user, editContestId = null }) => {
     if (!isConfirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:4444/deleteContest/${id}`, {
+      const response = await fetch(buildApiUrl(`/deleteContest/${id}`), {
         method: "DELETE",
       });
 
