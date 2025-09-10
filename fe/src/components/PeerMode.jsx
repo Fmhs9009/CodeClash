@@ -293,26 +293,26 @@ const styles = {
     animation: 'float 10s ease-in-out infinite',
   },
 
-  // Premium Hero Section
+  // Premium Hero Section - Lightweight
   heroSection: {
     position: 'relative',
     zIndex: 5,
-    padding: '30px 0 20px',
+    padding: 'clamp(12px, 3vw, 30px) 0 clamp(8px, 2vw, 20px)',
     textAlign: 'center',
   },
 
   heroContent: {
-    maxWidth: '700px',
+    maxWidth: 'min(700px, 90vw)',
     margin: '0 auto',
-    padding: '0 24px',
+    padding: '0 clamp(12px, 2vw, 24px)',
   },
 
   heroTitle: {
-    fontSize: 36,
+    fontSize: 'clamp(20px, 4vw, 36px)',
     fontWeight: 800,
     letterSpacing: '-0.02em',
     lineHeight: 1.2,
-    marginBottom: '12px',
+    marginBottom: 'clamp(6px, 1vw, 12px)',
     color: themeColors.text.primary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.secondary.light})`,
@@ -322,32 +322,32 @@ const styles = {
   },
 
   heroSubtitle: {
-    fontSize: 16,
+    fontSize: 'clamp(12px, 2vw, 16px)',
     fontWeight: 400,
     lineHeight: 1.5,
-    maxWidth: '480px',
-    margin: '0 auto 24px',
+    maxWidth: 'min(480px, 85vw)',
+    margin: '0 auto clamp(10px, 2vw, 24px)',
     color: themeColors.text.secondary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
-  // Container
+  // Container - Lightweight
   container: {
     position: 'relative',
     zIndex: 5,
-    padding: '0 24px 40px',
-    maxWidth: '1400px',
+    padding: '0 clamp(8px, 2vw, 24px) clamp(16px, 4vw, 40px)',
+    maxWidth: 'min(1400px, 95vw)',
     margin: '0 auto',
   },
 
-  // Content Layout - Vertical Stack
+  // Content Layout - Lightweight
   content: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
+    gap: 'clamp(10px, 2vw, 24px)',
   },
 
-  // Chat Section (Top)
+  // Chat Section - Lightweight
   chatSection: {
     width: '100%',
   },
@@ -357,16 +357,16 @@ const styles = {
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     border: `1px solid ${themeColors.primary.main}20`,
-    borderRadius: '20px',
+    borderRadius: 'clamp(10px, 2vw, 20px)',
     padding: '0',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
     overflow: 'hidden',
-    height: '450px',
+    height: 'clamp(350px, 45vh, 500px)',
     display: 'flex',
     flexDirection: 'column',
   },
 
-  // Coding Section (Bottom)
+  // Coding Section - Lightweight
   codingSection: {
     width: '100%',
   },
@@ -376,9 +376,9 @@ const styles = {
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     border: `1px solid ${themeColors.secondary.main}20`,
-    borderRadius: '20px',
+    borderRadius: 'clamp(10px, 2vw, 20px)',
     padding: '0',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
     overflow: 'hidden',
   },
 
@@ -396,9 +396,9 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
-  // Chat Header
+  // Chat Header - Lightweight
   chatHeader: {
-    padding: '24px 28px 20px',
+    padding: 'clamp(12px, 2vw, 24px) clamp(14px, 3vw, 28px) clamp(8px, 2vw, 20px)',
     borderBottom: `1px solid ${themeColors.primary.main}15`,
     background: `linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01))`,
   },
@@ -408,6 +408,20 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '16px',
+    // Responsive spacing
+    '@media (max-width: 960px)': {
+      marginBottom: '12px',
+    },
+    '@media (max-width: 768px)': {
+      marginBottom: '10px',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: '8px',
+    },
+    '@media (max-width: 480px)': {
+      marginBottom: '8px',
+      gap: '6px',
+    },
   },
 
   chatTitle: {
@@ -416,38 +430,23 @@ const styles = {
     margin: 0,
     color: themeColors.text.primary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    // Responsive font sizes
+    '@media (max-width: 1200px)': {
+      fontSize: '18px',
+    },
+    '@media (max-width: 960px)': { // Windows split screen
+      fontSize: '16px',
+    },
+    '@media (max-width: 768px)': {
+      fontSize: '15px',
+    },
+    '@media (max-width: 480px)': {
+      fontSize: '14px',
+    },
   },
 
   // Online Indicator
   onlineIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 12px',
-    background: `linear-gradient(135deg, ${themeColors.primary.main}15, rgba(255, 255, 255, 0.05))`,
-    borderRadius: '20px',
-    border: `1px solid ${themeColors.primary.main}25`,
-  },
-
-  onlineDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#10b981',
-    animation: 'pulse 2s infinite',
-  },
-
-  onlineText: {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: themeColors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-
-  // Room Info
-  roomInfo: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
@@ -477,7 +476,7 @@ const styles = {
     backgroundClip: 'text',
   },
 
-  // Premium Chat Box
+  // Premium Chat Box - Responsive
   chatBox: {
     flex: 1,
     overflowY: 'auto',
@@ -489,9 +488,30 @@ const styles = {
     scrollbarColor: `${themeColors.primary.main}40 transparent`,
     background: `linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05))`,
     borderRadius: '0 0 20px 20px',
+    // Responsive padding and spacing
+    '@media (max-width: 1200px)': {
+      padding: '16px 24px',
+      gap: '10px',
+      borderRadius: '0 0 16px 16px',
+    },
+    '@media (max-width: 960px)': { // Windows split screen
+      padding: '14px 20px',
+      gap: '8px',
+      borderRadius: '0 0 14px 14px',
+    },
+    '@media (max-width: 768px)': {
+      padding: '12px 16px',
+      gap: '6px',
+      borderRadius: '0 0 12px 12px',
+    },
+    '@media (max-width: 480px)': {
+      padding: '10px 12px',
+      gap: '5px',
+      borderRadius: '0 0 10px 10px',
+    },
   },
 
-  // Premium Message Bubbles
+  // Premium Message Bubbles - Responsive
   message: {
     borderRadius: '16px',
     padding: '12px 16px',
@@ -506,6 +526,33 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
+    // Responsive sizing
+    '@media (max-width: 1200px)': {
+      borderRadius: '14px',
+      padding: '10px 14px',
+      maxWidth: '80%',
+      fontSize: '13px',
+    },
+    '@media (max-width: 960px)': { // Windows split screen
+      borderRadius: '12px',
+      padding: '8px 12px',
+      maxWidth: '85%',
+      fontSize: '12px',
+    },
+    '@media (max-width: 768px)': {
+      borderRadius: '10px',
+      padding: '6px 10px',
+      maxWidth: '90%',
+      fontSize: '11px',
+      lineHeight: 1.4,
+    },
+    '@media (max-width: 480px)': {
+      borderRadius: '8px',
+      padding: '5px 8px',
+      maxWidth: '95%',
+      fontSize: '10px',
+      lineHeight: 1.3,
+    },
   },
 
   messageSender: {
@@ -590,46 +637,24 @@ const styles = {
 
 };
 
-// Add CSS animations
+// Add optimized CSS with responsive design
 const styleSheet = document.createElement('style');
-styleSheet.type = 'text/css';
-styleSheet.innerText = `
+styleSheet.textContent = `
+  /* Animations */
   @keyframes float {
-    0% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    33% {
-      transform: translateY(-30px) rotate(120deg);
-    }
-    66% {
-      transform: translateY(15px) rotate(240deg);
-    }
-    100% {
-      transform: translateY(0px) rotate(360deg);
-    }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
   }
   
   @keyframes messageSlideIn {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
   }
 `;
 document.head.appendChild(styleSheet);

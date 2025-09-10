@@ -165,83 +165,97 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
           )}
         </div>
         
-        <form style={styles.connectionForm} onSubmit={joinRoom}>
-        <TextField
-          type="text"
-          placeholder="Enter Room ID"
-          value={roomid}
-          inputRef={roomInputRef}
-          onChange={(e) => setRoomid(e.target.value)}
-          style={styles.input}
-          disabled={isRoomJoined}
-        />
-
-        <Select
-          value={language}
-          onChange={(e) => updateLang(e.target.value)}
-          style={styles.select}
-          options={[
-            { value: "", label: "Select your language" },
-            { value: "javascript", label: "JavaScript" },
-            { value: "python", label: "Python" },
-            { value: "cpp", label: "C++" },
-            { value: "java", label: "Java" }
-          ]}
-        />
-
-        {!isRoomJoined ? (
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="success"
-            style={styles.button}
-          >
-            Join
-          </Button>
-        ) : (
-          <Button 
-            type="button" 
-            variant="contained" 
-            color="error"
-            onClick={(e) => { e.preventDefault(); disconnectRoom(); }} 
-            style={styles.disconnectButton}
-          >
-            Disconnect
-          </Button>
-        )}
-          <button 
-            type="button" 
-            onClick={runCode} 
-            style={styles.runButton}
-          >
-            🚀 Run Code
-          </button>
-        </form>
+        {/* Room Connection Form */}
+        <div style={styles.roomConnectionContainer}>
+          <div style={styles.roomInputGroup}>
+            <TextField
+              label="Room ID"
+              placeholder="Enter Room ID to join collaborative session"
+              value={roomid}
+              inputRef={roomInputRef}
+              onChange={(e) => setRoomid(e.target.value)}
+              style={styles.input}
+              disabled={isRoomJoined}
+            />
+            
+            {/* Join/Disconnect Button */}
+            <div style={styles.joinButtonContainer}>
+              {!isRoomJoined ? (
+                <Button 
+                  type="button" 
+                  variant="contained" 
+                  color="success"
+                  onClick={joinRoom}
+                  style={styles.button}
+                >
+                  Join Room
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  variant="contained" 
+                  color="error"
+                  onClick={disconnectRoom} 
+                  style={styles.disconnectButton}
+                >
+                  Disconnect
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Code Editor Section */}
       <div style={styles.codeSection}>
-        <div style={styles.sectionHeader}>
-          <h4 style={styles.sectionTitle}>
+        {/* Section Header */}
+        <div style={styles.editorSectionHeader}>
+          <h4 style={styles.editorSectionTitle}>
             💻 Code Editor
           </h4>
-          <div style={styles.languageIndicator}>
-            {language && (
-              <span style={styles.languageTag}>
-                {language.toUpperCase()}
-              </span>
-            )}
-          </div>
         </div>
         
-        <div style={styles.editorContainer}>
+        {/* Editor Controls Bar */}
+        <div style={styles.editorControlsBar}>
+          <div style={styles.languageControlGroup}>
+            <label style={styles.controlLabel}>Language:</label>
+            <Select
+              value={language}
+              onChange={(e) => updateLang(e.target.value)}
+              style={styles.languageDropdown}
+              options={[
+                { value: "", label: "Select Language" },
+                { value: "javascript", label: "JavaScript" },
+                { value: "python", label: "Python" },
+                { value: "cpp", label: "C++" },
+                { value: "java", label: "Java" }
+              ]}
+            />
+            {language && (
+              <div style={styles.languageIndicatorBadge}>
+                {language.toUpperCase()}
+              </div>
+            )}
+          </div>
+          
+          <button 
+            type="button" 
+            onClick={runCode} 
+            style={styles.runCodeButton}
+          >
+            🚀 Run Code
+          </button>
+        </div>
+        
+        {/* Code Editor Container */}
+        <div style={styles.codeEditorWrapper}>
           <CodeMirror 
             value={code} 
             extensions={[SetLanguage]} 
             onChange={(value) => updateCode(value)} 
             style={styles.codeMirror}
             theme="dark"
-            height="300px"
+            height={window.innerWidth <= 480 ? "200px" : window.innerWidth <= 768 ? "250px" : window.innerWidth <= 960 ? "280px" : "300px"}
             basicSetup={{
               lineNumbers: true,
               foldGutter: true,
@@ -296,12 +310,12 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
 };
 
 const styles = {
-  // Main Container
+  // Main Container - Lightweight
   container: {
-    padding: '24px 28px 28px',
+    padding: 'clamp(12px, 2vw, 24px) clamp(14px, 3vw, 28px) clamp(14px, 3vw, 28px)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
+    gap: 'clamp(10px, 2vw, 24px)',
     height: '100%',
   },
 
@@ -358,16 +372,108 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
-  // Connection Form
-  connectionForm: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr auto auto',
-    gap: '16px',
-    alignItems: 'end',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-      gap: '12px',
+  // Room Connection Container
+  roomConnectionContainer: {
+    marginBottom: '20px',
+  },
+
+  roomInputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+
+  // Join Button Container - Below Room ID
+  joinButtonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+  },
+
+  // Code Editor Section Header
+  editorSectionHeader: {
+    marginBottom: '20px',
+  },
+
+  editorSectionTitle: {
+    fontSize: '20px',
+    fontWeight: 700,
+    margin: 0,
+    color: themeColors.text.primary,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  // Editor Controls Bar
+  editorControlsBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01))`,
+    borderRadius: '12px 12px 0 0',
+    border: `1px solid ${themeColors.secondary.main}20`,
+    borderBottom: 'none',
+    marginBottom: '0',
+  },
+
+  // Language Control Group
+  languageControlGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+
+  controlLabel: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: themeColors.text.primary,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  languageDropdown: {
+    minWidth: '160px',
+  },
+
+  languageIndicatorBadge: {
+    padding: '6px 12px',
+    background: `linear-gradient(135deg, ${themeColors.secondary.main}, ${themeColors.secondary.dark})`,
+    color: themeColors.text.primary,
+    borderRadius: '6px',
+    fontSize: '11px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+    boxShadow: `0 2px 6px ${themeColors.secondary.main}25`,
+  },
+
+  // Run Code Button in Controls Bar
+  runCodeButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: themeColors.text.primary,
+    border: 'none',
+    borderRadius: '8px',
+    padding: '10px 20px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    boxShadow: `0 3px 8px ${themeColors.primary.main}30`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      boxShadow: `0 4px 12px ${themeColors.primary.main}40`,
     },
+  },
+
+  // Code Editor Wrapper
+  codeEditorWrapper: {
+    borderRadius: '0 0 12px 12px',
+    overflow: 'hidden',
+    border: `1px solid ${themeColors.secondary.main}20`,
+    borderTop: 'none',
   },
 
   input: {
@@ -405,13 +511,17 @@ const styles = {
     color: themeColors.text.primary,
     border: 'none',
     borderRadius: '12px',
-    padding: '12px 20px',
+    padding: '14px 24px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     boxShadow: `0 4px 12px ${themeColors.success.main}30`,
+    minWidth: '100px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     '&:hover': {
       transform: 'translateY(-2px)',
       boxShadow: `0 6px 20px ${themeColors.success.main}40`,
@@ -423,13 +533,17 @@ const styles = {
     color: themeColors.text.primary,
     border: 'none',
     borderRadius: '12px',
-    padding: '12px 20px',
+    padding: '14px 24px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     boxShadow: `0 4px 12px ${themeColors.error.main}30`,
+    minWidth: '120px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     '&:hover': {
       transform: 'translateY(-2px)',
       boxShadow: `0 6px 20px ${themeColors.error.main}40`,
@@ -440,17 +554,22 @@ const styles = {
     background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
     color: themeColors.text.primary,
     border: 'none',
-    borderRadius: '12px',
-    padding: '12px 20px',
-    fontSize: '14px',
+    borderRadius: '10px',
+    padding: '10px 16px',
+    fontSize: '13px',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    boxShadow: `0 4px 12px ${themeColors.primary.main}30`,
+    boxShadow: `0 3px 8px ${themeColors.primary.main}30`,
+    minWidth: '120px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
     '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: `0 6px 20px ${themeColors.primary.main}40`,
+      transform: 'translateY(-1px)',
+      boxShadow: `0 4px 12px ${themeColors.primary.main}40`,
     },
   },
 
@@ -475,25 +594,11 @@ const styles = {
     padding: '4px 12px',
     background: `linear-gradient(135deg, ${themeColors.secondary.main}, ${themeColors.secondary.dark})`,
     color: themeColors.text.primary,
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: 700,
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
-  },
-
-  editorContainer: {
-    padding: '0 24px 24px',
-  },
-
-  codeMirror: {
-    borderRadius: '12px',
-    overflow: 'hidden',
-    border: `1px solid ${themeColors.secondary.main}15`,
-    fontSize: '14px',
-    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
-    minHeight: '300px',
-    height: 'auto',
   },
 
   // IO Section
@@ -510,11 +615,7 @@ const styles = {
   ioGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '24px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-      gap: '20px',
-    },
+    gap: 'clamp(12px, 2vw, 24px)',
   },
 
   inputPanel: {
@@ -557,15 +658,7 @@ const styles = {
     fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
     resize: 'vertical',
     minHeight: '120px',
-    '&:focus': {
-      outline: 'none',
-      border: `1px solid ${themeColors.primary.main}40`,
-      boxShadow: `0 0 0 3px ${themeColors.primary.main}10`,
-    },
-    '&::placeholder': {
-      color: 'rgba(255, 255, 255, 0.4)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    },
+    outline: 'none',
   },
 
   readOnlyTextarea: {
@@ -573,6 +666,14 @@ const styles = {
     cursor: 'default',
     opacity: 0.9,
   },
+
+  // CodeMirror Editor
+  codeMirror: {
+    fontSize: '14px',
+    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+    minHeight: '300px',
+    height: 'auto',
+  }, 
 };
 
 export default PeerProgPage;
