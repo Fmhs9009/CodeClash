@@ -9,6 +9,21 @@ import createSubmission from './CodeExecution';
 import { Button, Typography, TextField, Select } from './ui';
 import { colors, shadows } from '../theme';
 
+// Add CSS animation for loading spinner
+const spinKeyframes = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Inject the keyframes into the document head
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = spinKeyframes;
+  document.head.appendChild(style);
+}
+
 // Premium Theme Colors
 const themeColors = {
   primary: {
@@ -49,7 +64,9 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
   const [id, setId] = useState(0);
   const [stdOutput, setStdOutput] = useState("");
   const [stdInput, setStdInput] = useState("");
+  const [isCodeRunning, setIsCodeRunning] = useState(false);
   const roomInputRef = useRef("");
+  const outputRef = useRef(null);
 
   useEffect(() => {
     socket.on("connect", () => console.log(socket.id));
@@ -103,16 +120,44 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
       alert('Please choose your language');
       return;
     }
+    
+    setIsCodeRunning(true);
+    setStdOutput(""); // Clear previous output
+    
     try {
       const result = await createSubmission(id, code, stdInput.trim() !== "" ? stdInput : null);
 
       if (result?.output) {
         setStdOutput(result.output);
         if (roomid !== "") socket.emit("update-output", { outputVal: result.output, roomid });
+        
+        // Auto-focus to output section after getting response
+        setTimeout(() => {
+          if (outputRef.current) {
+            outputRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            outputRef.current.focus();
+          }
+        }, 100);
       }
     } catch (error) {
       console.error("Execution error:", error);
       setStdOutput("Error executing code.");
+      
+      // Auto-focus to output section even on error
+      setTimeout(() => {
+        if (outputRef.current) {
+          outputRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          outputRef.current.focus();
+        }
+      }, 100);
+    } finally {
+      setIsCodeRunning(false);
     }
   }, [code, id, stdInput, roomid]);
 
@@ -241,9 +286,22 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
           <button 
             type="button" 
             onClick={runCode} 
-            style={styles.runCodeButton}
+            disabled={isCodeRunning}
+            style={{
+              ...styles.runCodeButton,
+              ...(isCodeRunning ? styles.runCodeButtonLoading : {})
+            }}
           >
-            🚀 Run Code
+            {isCodeRunning ? (
+              <>
+                <span style={styles.loadingSpinner}>⏳</span>
+                Running...
+              </>
+            ) : (
+              <>
+                🚀 Run Code
+              </>
+            )}
           </button>
         </div>
         
@@ -293,12 +351,14 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
             </div>
             <div style={styles.panelContent}>
               <textarea
-                value={stdOutput}
+                ref={outputRef}
+                value={isCodeRunning ? "⏳ Running code..." : stdOutput}
                 readOnly
                 placeholder="Output will appear here..."
                 style={{
                   ...styles.ioTextarea,
-                  ...styles.readOnlyTextarea
+                  ...styles.readOnlyTextarea,
+                  ...(isCodeRunning ? styles.loadingOutput : {})
                 }}
               />
             </div>
@@ -550,27 +610,25 @@ const styles = {
     },
   },
 
-  runButton: {
-    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
-    color: themeColors.text.primary,
-    border: 'none',
-    borderRadius: '10px',
-    padding: '10px 16px',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    boxShadow: `0 3px 8px ${themeColors.primary.main}30`,
-    minWidth: '120px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
+  runCodeButtonLoading: {
+    opacity: 0.7,
+    cursor: 'not-allowed',
+    background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.primary.main})`,
     '&:hover': {
-      transform: 'translateY(-1px)',
-      boxShadow: `0 4px 12px ${themeColors.primary.main}40`,
+      transform: 'none',
+      boxShadow: `0 3px 8px ${themeColors.primary.main}30`,
     },
+  },
+
+  loadingSpinner: {
+    animation: 'spin 1s linear infinite',
+    display: 'inline-block',
+  },
+
+  loadingOutput: {
+    fontStyle: 'italic',
+    color: themeColors.primary.light,
+    background: `linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(99, 102, 241, 0.02))`,
   },
 
   // Code Section
