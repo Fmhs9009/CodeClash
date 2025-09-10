@@ -1961,16 +1961,6 @@ const styles = {
     gap: '20px',
     maxWidth: '700px',
     margin: '0 auto',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-      gap: '16px',
-      maxWidth: '400px',
-    },
-    '@media (max-width: 1024px) and (min-width: 769px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '18px',
-      maxWidth: '500px',
-    },
   },
 
   featureItem: {
