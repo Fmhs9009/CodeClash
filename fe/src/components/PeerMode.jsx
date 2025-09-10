@@ -408,20 +408,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '16px',
-    // Responsive spacing
-    '@media (max-width: 960px)': {
-      marginBottom: '12px',
-    },
-    '@media (max-width: 768px)': {
-      marginBottom: '10px',
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      gap: '8px',
-    },
-    '@media (max-width: 480px)': {
-      marginBottom: '8px',
-      gap: '6px',
-    },
+    // Responsive spacing handled by CSS Grid
   },
 
   chatTitle: {
@@ -430,19 +417,6 @@ const styles = {
     margin: 0,
     color: themeColors.text.primary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    // Responsive font sizes
-    '@media (max-width: 1200px)': {
-      fontSize: '18px',
-    },
-    '@media (max-width: 960px)': { // Windows split screen
-      fontSize: '16px',
-    },
-    '@media (max-width: 768px)': {
-      fontSize: '15px',
-    },
-    '@media (max-width: 480px)': {
-      fontSize: '14px',
-    },
   },
 
   // Online Indicator
@@ -488,27 +462,7 @@ const styles = {
     scrollbarColor: `${themeColors.primary.main}40 transparent`,
     background: `linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05))`,
     borderRadius: '0 0 20px 20px',
-    // Responsive padding and spacing
-    '@media (max-width: 1200px)': {
-      padding: '16px 24px',
-      gap: '10px',
-      borderRadius: '0 0 16px 16px',
-    },
-    '@media (max-width: 960px)': { // Windows split screen
-      padding: '14px 20px',
-      gap: '8px',
-      borderRadius: '0 0 14px 14px',
-    },
-    '@media (max-width: 768px)': {
-      padding: '12px 16px',
-      gap: '6px',
-      borderRadius: '0 0 12px 12px',
-    },
-    '@media (max-width: 480px)': {
-      padding: '10px 12px',
-      gap: '5px',
-      borderRadius: '0 0 10px 10px',
-    },
+    // Responsive design handled by CSS Grid
   },
 
   // Premium Message Bubbles - Responsive
@@ -526,33 +480,10 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
-    // Responsive sizing
-    '@media (max-width: 1200px)': {
-      borderRadius: '14px',
-      padding: '10px 14px',
-      maxWidth: '80%',
-      fontSize: '13px',
-    },
-    '@media (max-width: 960px)': { // Windows split screen
-      borderRadius: '12px',
-      padding: '8px 12px',
-      maxWidth: '85%',
-      fontSize: '12px',
-    },
-    '@media (max-width: 768px)': {
-      borderRadius: '10px',
-      padding: '6px 10px',
-      maxWidth: '90%',
-      fontSize: '11px',
-      lineHeight: 1.4,
-    },
-    '@media (max-width: 480px)': {
-      borderRadius: '8px',
-      padding: '5px 8px',
-      maxWidth: '95%',
-      fontSize: '10px',
-      lineHeight: 1.3,
-    },
+    padding: '12px 16px',
+    maxWidth: '85%',
+    fontSize: '14px',
+    lineHeight: 1.5,
   },
 
   messageSender: {
