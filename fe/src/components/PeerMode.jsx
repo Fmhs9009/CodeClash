@@ -297,22 +297,22 @@ const styles = {
   heroSection: {
     position: 'relative',
     zIndex: 5,
-    padding: '60px 0',
+    padding: '30px 0 20px',
     textAlign: 'center',
   },
 
   heroContent: {
-    maxWidth: '900px',
+    maxWidth: '700px',
     margin: '0 auto',
     padding: '0 24px',
   },
 
   heroTitle: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 800,
     letterSpacing: '-0.02em',
-    lineHeight: 1.1,
-    marginBottom: '20px',
+    lineHeight: 1.2,
+    marginBottom: '12px',
     color: themeColors.text.primary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     background: `linear-gradient(135deg, ${themeColors.primary.light}, ${themeColors.secondary.light})`,
@@ -322,11 +322,11 @@ const styles = {
   },
 
   heroSubtitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 400,
-    lineHeight: 1.6,
-    maxWidth: '580px',
-    margin: '0 auto 60px',
+    lineHeight: 1.5,
+    maxWidth: '480px',
+    margin: '0 auto 24px',
     color: themeColors.text.secondary,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
@@ -335,7 +335,7 @@ const styles = {
   container: {
     position: 'relative',
     zIndex: 5,
-    padding: '0 24px 80px',
+    padding: '0 24px 40px',
     maxWidth: '1400px',
     margin: '0 auto',
   },
@@ -344,7 +344,7 @@ const styles = {
   content: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '32px',
+    gap: '24px',
   },
 
   // Chat Section (Top)
