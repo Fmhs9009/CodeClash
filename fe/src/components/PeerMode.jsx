@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import PeerProgPage from "./PeerProgPage";
 import { io } from "socket.io-client";
 import socket from "./Socket";
@@ -40,6 +40,43 @@ const themeColors = {
   }
 };
 
+// Inject CSS once globally to prevent re-injection on every render
+if (!document.getElementById('peer-mode-styles')) {
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'peer-mode-styles';
+  styleSheet.textContent = `
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    @keyframes messageSlideIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    
+    /* Prevent white background flashes */
+    body {
+      background: #0f0f23 !important;
+      overflow-x: hidden;
+    }
+    
+    /* Smooth scrolling performance */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  `;
+  document.head.appendChild(styleSheet);
+}
+
 const PeerMode = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -59,19 +96,14 @@ const PeerMode = () => {
     };
   }, [socket]);
   
-  // Send a new message
+  // Send a new message - optimized
   const sendMessage = useCallback(
     (e) => {
       e.preventDefault();
-      console.log("Send button clicked");
-      console.log("New message:", newMessage);
-      console.log("Room ID:", roomid);
-  
+      
       if (newMessage.trim() && roomid) {
         const message = { text: newMessage };
         const senderUserName = user.name;
-        console.log("Sending message:", { message, roomid, senderUserName }); 
-        console.log("senderUserName:", user.name);
        
         socket.emit("send-message", { message, roomid, senderUserName });
         setMessages((prevMessages) => [
@@ -79,44 +111,44 @@ const PeerMode = () => {
           { ...message, sender: socket.id, senderUserName },
         ]);
         setNewMessage(""); 
-        console.log("Message sent and input cleared");
-      } else {
-        console.log("Message or Room ID is invalid");
       }
     },
-    [socket, newMessage, roomid, user]
+    [socket, newMessage, roomid, user.name]
   );
 
+  // Memoize styles to prevent recreation on every render
+  const memoizedStyles = useMemo(() => styles, []);
+
   return (
-    <div style={styles.pageContainer}>
+    <div style={memoizedStyles.pageContainer}>
       {/* Animated Background Shapes */}
-      <div style={styles.backgroundShapes}>
-        <div style={styles.floatingShape1}></div>
-        <div style={styles.floatingShape2}></div>
-        <div style={styles.floatingShape3}></div>
+      <div style={memoizedStyles.backgroundShapes}>
+        <div style={memoizedStyles.floatingShape1}></div>
+        <div style={memoizedStyles.floatingShape2}></div>
+        <div style={memoizedStyles.floatingShape3}></div>
       </div>
 
       {/* Premium Navbar */}
       <CommonNavbar />
 
       {/* Hero Section */}
-      <div style={styles.heroSection}>
-        <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>
+      <div style={memoizedStyles.heroSection}>
+        <div style={memoizedStyles.heroContent}>
+          <h1 style={memoizedStyles.heroTitle}>
             🤝 Peer Programming Mode
           </h1>
-          <p style={styles.heroSubtitle}>
+          <p style={memoizedStyles.heroSubtitle}>
             Collaborate on code, debug together, and learn effectively with your peers in real-time.
           </p>
         </div>
       </div>
 
-      <Container maxWidth="xl" style={styles.container}>
+      <Container maxWidth="xl" style={memoizedStyles.container}>
 
-        <div style={styles.content}>
+        <div style={memoizedStyles.content}>
           {/* Top Section - Chat Interface */}
-          <div style={styles.chatSection}>
-            <Card variant="outlined" style={styles.chatCard}>
+          <div style={memoizedStyles.chatSection}>
+            <Card variant="outlined" style={memoizedStyles.chatCard}>
               <div style={styles.chatHeader}>
                 <div style={styles.chatTitleContainer}>
                   <h3 style={styles.chatTitle}>
@@ -238,13 +270,7 @@ const PeerMode = () => {
 };
 
 const styles = {
-  // Premium Page Container
-  pageContainer: {
-    minHeight: '100vh',
-    background: `linear-gradient(135deg, ${themeColors.background.default}, #16213e)`,
-    position: 'relative',
-    overflow: 'hidden',
-  },
+  // Animated Background Shapes - moved pageContainer to end for optimization
 
   // Animated Background Shapes
   backgroundShapes: {
@@ -465,11 +491,11 @@ const styles = {
     // Responsive design handled by CSS Grid
   },
 
-  // Premium Message Bubbles - Responsive
+  // Premium Message Bubbles - Optimized
   message: {
     borderRadius: '16px',
     padding: '12px 16px',
-    maxWidth: '75%',
+    maxWidth: '85%',
     wordWrap: 'break-word',
     whiteSpace: 'normal',
     overflowWrap: 'break-word',
@@ -480,10 +506,7 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
-    padding: '12px 16px',
-    maxWidth: '85%',
-    fontSize: '14px',
-    lineHeight: 1.5,
+    willChange: 'transform, opacity',
   },
 
   messageSender: {
@@ -566,28 +589,17 @@ const styles = {
   },
 
 
+  // Enhanced page container with full background coverage
+  pageContainer: {
+    minHeight: '100vh',
+    background: `linear-gradient(135deg, ${themeColors.background.default} 0%, #16213e 100%)`,
+    position: 'relative',
+    overflow: 'hidden',
+    // Prevent white flashes during fast scrolling
+    transform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    perspective: 1000,
+  },
 };
 
-// Add optimized CSS with responsive design
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  /* Animations */
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(180deg); }
-  }
-  
-  @keyframes messageSlideIn {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-  }
-`;
-document.head.appendChild(styleSheet);
-
-export default PeerMode;
+export default memo(PeerMode);
