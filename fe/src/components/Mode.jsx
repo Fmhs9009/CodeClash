@@ -263,7 +263,8 @@ const styles = {
   
   heroSection: {
     textAlign: 'center',
-    marginBottom: '80px',
+    marginBottom: '1em',
+    marginTop: '0px',
     padding: '60px 20px',
     display: 'flex',
     flexDirection: 'column',
@@ -291,13 +292,15 @@ const styles = {
     maxWidth: '600px',
     margin: '0 auto',
     animation: 'fadeInUp 1s ease-out 0.2s both',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    // marginBottom: '40px',
   },
   
   modesSection: {
     padding: '40px 20px',
     maxWidth: '1000px',
-    margin: '0 auto'
+    margin: '0 auto',
+    
   },
   
   modeGrid: {

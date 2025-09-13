@@ -256,7 +256,7 @@ const PeerProgPage = ({ setRoomid, roomid, setJoinedRoom, joinedRoom }) => {
         {/* Section Header */}
         <div style={styles.editorSectionHeader}>
           <h4 style={styles.editorSectionTitle}>
-            💻 Code Editor
+            💻 Collaborative Code Editor
           </h4>
         </div>
         

@@ -1074,7 +1074,7 @@ const styles = {
   heroSection: {
     textAlign: 'center',
     marginTop: '90px',
-    marginBottom: '15px',
+    marginBottom: '1em',
     padding: '10px 20px',
     display: 'flex',
     flexDirection: 'column',

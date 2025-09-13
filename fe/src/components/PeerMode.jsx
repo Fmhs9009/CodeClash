@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
-import PeerProgPage from "./PeerProgPage";
+import RoomConnection from "./RoomConnection";
+import CollaborativeCodeEditor from "./CollaborativeCodeEditor";
 import { io } from "socket.io-client";
 import socket from "./Socket";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -82,6 +83,7 @@ const PeerMode = () => {
   const [newMessage, setNewMessage] = useState("");
   const [roomid, setRoomid] = useState("");
   const [joinedRoom, setJoinedRoom] = useState("");
+  const [isRoomJoined, setIsRoomJoined] = useState(false);
 
   const { user } = useAuth0();
 
@@ -116,6 +118,31 @@ const PeerMode = () => {
     [socket, newMessage, roomid, user.name]
   );
 
+  // Room connection functions
+  const joinRoom = useCallback((e) => {
+    e.preventDefault();
+    if (roomid.trim() === "") {
+      alert('Please enter a room ID');
+      return;
+    }
+
+    console.log("Joining room:", roomid);
+    socket.emit("join-room", roomid);
+    setJoinedRoom(roomid);
+    setIsRoomJoined(true);
+  }, [roomid]);
+
+  const disconnectRoom = useCallback(() => {
+    if (!joinedRoom) return;
+
+    console.log("Disconnecting from room:", joinedRoom);
+    socket.emit("disconnect-room", joinedRoom);
+
+    setIsRoomJoined(false);
+    setJoinedRoom("");
+    setRoomid("");
+  }, [joinedRoom]);
+
   // Memoize styles to prevent recreation on every render
   const memoizedStyles = useMemo(() => styles, []);
 
@@ -146,16 +173,30 @@ const PeerMode = () => {
       <Container maxWidth="xl" style={memoizedStyles.container}>
 
         <div style={memoizedStyles.content}>
-          {/* Top Section - Chat Interface */}
+          {/* Section 1 - Room Connection */}
+          <div style={memoizedStyles.roomConnectionSection}>
+            <RoomConnection 
+              roomid={roomid}
+              setRoomid={setRoomid}
+              joinedRoom={joinedRoom}
+              setJoinedRoom={setJoinedRoom}
+              isRoomJoined={isRoomJoined}
+              setIsRoomJoined={setIsRoomJoined}
+              joinRoom={joinRoom}
+              disconnectRoom={disconnectRoom}
+            />
+          </div>
+
+          {/* Section 2 - Live Chat */}
           <div style={memoizedStyles.chatSection}>
             <Card variant="outlined" style={memoizedStyles.chatCard}>
-              <div style={styles.chatHeader}>
-                <div style={styles.chatTitleContainer}>
-                  <h3 style={styles.chatTitle}>
+              <div style={memoizedStyles.chatHeader}>
+                <div style={memoizedStyles.chatTitleContainer}>
+                  <h3 style={memoizedStyles.chatTitle}>
                     💬 Live Chat
                   </h3>
                   <div style={{
-                    ...styles.onlineIndicator,
+                    ...memoizedStyles.onlineIndicator,
                     background: joinedRoom 
                       ? `linear-gradient(135deg, ${themeColors.success.main}15, rgba(255, 255, 255, 0.05))`
                       : `linear-gradient(135deg, ${themeColors.error.main}15, rgba(255, 255, 255, 0.05))`,
@@ -164,12 +205,12 @@ const PeerMode = () => {
                       : `1px solid ${themeColors.error.main}25`,
                   }}>
                     <div style={{
-                      ...styles.onlineDot,
+                      ...memoizedStyles.onlineDot,
                       background: joinedRoom ? themeColors.success.main : themeColors.error.main,
                       animation: joinedRoom ? 'pulse 2s infinite' : 'none',
                     }}></div>
                     <span style={{
-                      ...styles.onlineText,
+                      ...memoizedStyles.onlineText,
                       color: joinedRoom ? themeColors.success.light : themeColors.error.light,
                     }}>
                       {joinedRoom ? 'Online' : 'Offline - Join a room first'}
@@ -184,12 +225,12 @@ const PeerMode = () => {
                 )}
               </div>
               
-              <div style={styles.chatBox}>
+              <div style={memoizedStyles.chatBox}>
                 {messages.map((msg, index) => (
                   <div
                     key={index}
                     style={{
-                      ...styles.message,
+                      ...memoizedStyles.message,
                       alignSelf: msg.sender === socket.id ? "flex-end" : "flex-start",
                       background: msg.sender === socket.id 
                         ? `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`
@@ -205,7 +246,7 @@ const PeerMode = () => {
                   >
                     <div 
                       style={{
-                        ...styles.messageSender,
+                        ...memoizedStyles.messageSender,
                         background: msg.sender === socket.id 
                           ? `linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))`
                           : `linear-gradient(135deg, ${themeColors.secondary.main}40, ${themeColors.secondary.dark}30)`,
@@ -219,25 +260,25 @@ const PeerMode = () => {
                     >
                       {msg.sender === socket.id ? '👤 You' : `👥 ${msg.senderUserName || "Unknown User"}`}
                     </div>
-                    <div style={styles.messageText}>
+                    <div style={memoizedStyles.messageText}>
                       {msg.text}
                     </div>
                   </div>
                 ))}
               </div>
               
-              <form style={styles.chatForm} onSubmit={sendMessage}>
-                <div style={styles.inputContainer}>
+              <form style={memoizedStyles.chatForm} onSubmit={sendMessage}>
+                <div style={memoizedStyles.inputContainer}>
                   <input
                     type="text"
                     placeholder="Type your message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    style={styles.chatInput}
+                    style={memoizedStyles.chatInput}
                   />
                   <button 
                     type="submit" 
-                    style={styles.sendButton}
+                    style={memoizedStyles.sendButton}
                   >
                     🚀
                   </button>
@@ -246,23 +287,14 @@ const PeerMode = () => {
             </Card>
           </div>
 
-          {/* Bottom Section - Coding Area with Controls */}
-          <div style={styles.codingSection}>
-            <Card variant="outlined" style={styles.codingCard}>
-              <div style={styles.codingHeader}>
-                <h3 style={styles.codingTitle}>
-                  💻 Collaborative Coding
-                </h3>
-              </div>
-              
-              <PeerProgPage 
-                setRoomid={setRoomid} 
-                roomid={roomid} 
-                setJoinedRoom={setJoinedRoom} 
-                joinedRoom={joinedRoom} 
-              />
-            </Card>
+          {/* Section 3 - Collaborative Code Editor */}
+          <div style={memoizedStyles.codeEditorSection}>
+            <CollaborativeCodeEditor 
+              roomid={roomid}
+              joinedRoom={joinedRoom}
+            />
           </div>
+
         </div>
       </Container>
     </div>
@@ -370,7 +402,45 @@ const styles = {
   content: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 'clamp(10px, 2vw, 24px)',
+    gap: 'clamp(24px, 4vw, 40px)',
+    // Responsive design handled by CSS Grid
+  },
+
+  // Section Styles - Unified for all three sections
+  roomConnectionSection: {
+    width: '100%',
+  },
+
+  codeEditorSection: {
+    width: '100%',
+  },
+
+  sectionCard: {
+    background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.05))`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${themeColors.primary.main}25`,
+    borderRadius: '20px',
+    padding: '0',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+  },
+
+  sectionHeader: {
+    padding: '24px 32px 20px',
+    borderBottom: `1px solid ${themeColors.primary.main}15`,
+    background: `linear-gradient(135deg, ${themeColors.primary.main}08, rgba(255, 255, 255, 0.02))`,
+  },
+
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: 700,
+    margin: 0,
+    color: themeColors.text.primary,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    letterSpacing: '-0.01em',
   },
 
   // Chat Section - Lightweight
