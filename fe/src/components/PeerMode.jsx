@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo, useRef } from "react";
 import RoomConnection from "./RoomConnection";
 import CollaborativeCodeEditor from "./CollaborativeCodeEditor";
 import { io } from "socket.io-client";
@@ -46,15 +46,21 @@ if (!document.getElementById('peer-mode-styles')) {
   const styleSheet = document.createElement('style');
   styleSheet.id = 'peer-mode-styles';
   styleSheet.textContent = `
-    /* Animations */
+    /* Premium Animations */
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
       50% { transform: translateY(-20px) rotate(180deg); }
     }
     
-    @keyframes messageSlideIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
+    @keyframes slideInMessage {
+      0% { opacity: 0; transform: translateX(-20px) scale(0.9); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    
+    @keyframes messageGlow {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.2); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
     }
     
     @keyframes pulse {
@@ -62,6 +68,25 @@ if (!document.getElementById('peer-mode-styles')) {
       70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
+    
+    @keyframes typingDot {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-10px); opacity: 1; }
+    }
+    
+    /* Typing dots animation */
+    .typing-dots span {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #6366f1;
+      animation: typingDot 1.4s infinite;
+    }
+    
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
     
     /* Prevent white background flashes */
     body {
@@ -74,6 +99,25 @@ if (!document.getElementById('peer-mode-styles')) {
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
+    
+    /* Custom scrollbar for chat */
+    .messages-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 3px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.5);
+    }
   `;
   document.head.appendChild(styleSheet);
 }
@@ -84,36 +128,131 @@ const PeerMode = () => {
   const [roomid, setRoomid] = useState("");
   const [joinedRoom, setJoinedRoom] = useState("");
   const [isRoomJoined, setIsRoomJoined] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState(1);
+  const [isTyping, setIsTyping] = useState(false);
+  const [lastMessageTime, setLastMessageTime] = useState(null);
+  const [messageAnimation, setMessageAnimation] = useState(null);
+  
+  // Refs for sound and scroll
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const { user } = useAuth0();
 
-  // Listen for incoming messages
+  // Create message notification sound
+  const playMessageSound = useCallback(() => {
+    try {
+      // Create a pleasant notification sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Create a pleasant "ding" sound
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Audio notification not supported');
+    }
+  }, []);
+
+  // Auto-scroll to bottom of messages
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, []);
+
   useEffect(() => {
-    socket.on("receive-message", (message) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
+    socket.on("receive-message", (data) => {
+      setMessages((prevMessages) => {
+        // Play sound only if message is from another user
+        if (data.name !== user?.name) {
+          playMessageSound();
+          setMessageAnimation(data.id || Date.now());
+          setTimeout(() => setMessageAnimation(null), 1000);
+        }
+        
+        setLastMessageTime(new Date());
+        setTimeout(scrollToBottom, 100);
+        return [...prevMessages, data];
+      });
+    });
+
+    // Listen for typing indicators
+    socket.on("user-typing", (data) => {
+      if (data.name !== user?.name) {
+        setIsTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+        }, 3000);
+      }
+    });
+
+    // Listen for online users count
+    socket.on("room-users-count", (count) => {
+      setOnlineUsers(count);
     });
 
     return () => {
       socket.off("receive-message");
+      socket.off("user-typing");
+      socket.off("room-users-count");
+      clearTimeout(typingTimeoutRef.current);
     };
-  }, [socket]);
-  
-  // Send a new message - optimized
+  }, [user?.name, playMessageSound, scrollToBottom]);
+
+  // Handle typing indicator
+  const handleTyping = useCallback(() => {
+    if (roomid && user?.name) {
+      socket.emit("typing", {
+        name: user.name,
+        roomid: roomid
+      });
+    }
+  }, [roomid, user?.name]);
+
+  // Enhanced message input handler
+  const handleMessageChange = useCallback((e) => {
+    setNewMessage(e.target.value);
+    handleTyping();
+  }, [handleTyping]);
+
+  // Send a new message - enhanced with better UX
   const sendMessage = useCallback(
     (e) => {
       e.preventDefault();
+      if (newMessage.trim() === "") return;
+
+      const messageData = {
+        id: Date.now() + Math.random(), // Unique ID for animations
+        message: newMessage.trim(),
+        name: user.name,
+        roomid: roomid,
+        timestamp: new Date().toISOString(),
+        avatar: user.picture || null
+      };
+
+      // Add message to local state immediately for better UX
+      setMessages(prev => [...prev, messageData]);
+      socket.emit("send-message", messageData);
+      setNewMessage("");
       
-      if (newMessage.trim() && roomid) {
-        const message = { text: newMessage };
-        const senderUserName = user.name;
-       
-        socket.emit("send-message", { message, roomid, senderUserName });
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...message, sender: socket.id, senderUserName },
-        ]);
-        setNewMessage(""); 
-      }
+      // Auto-scroll after sending
+      setTimeout(scrollToBottom, 100);
     },
     [socket, newMessage, roomid, user.name]
   );
@@ -192,96 +331,99 @@ const PeerMode = () => {
             <Card variant="outlined" style={memoizedStyles.chatCard}>
               <div style={memoizedStyles.chatHeader}>
                 <div style={memoizedStyles.chatTitleContainer}>
-                  <h3 style={memoizedStyles.chatTitle}>
-                    💬 Live Chat
-                  </h3>
-                  <div style={{
-                    ...memoizedStyles.onlineIndicator,
-                    background: joinedRoom 
-                      ? `linear-gradient(135deg, ${themeColors.success.main}15, rgba(255, 255, 255, 0.05))`
-                      : `linear-gradient(135deg, ${themeColors.error.main}15, rgba(255, 255, 255, 0.05))`,
-                    border: joinedRoom
-                      ? `1px solid ${themeColors.success.main}25`
-                      : `1px solid ${themeColors.error.main}25`,
-                  }}>
-                    <div style={{
-                      ...memoizedStyles.onlineDot,
-                      background: joinedRoom ? themeColors.success.main : themeColors.error.main,
-                      animation: joinedRoom ? 'pulse 2s infinite' : 'none',
-                    }}></div>
-                    <span style={{
-                      ...memoizedStyles.onlineText,
-                      color: joinedRoom ? themeColors.success.light : themeColors.error.light,
-                    }}>
-                      {joinedRoom ? 'Online' : 'Offline - Join a room first'}
-                    </span>
+                  <h3 style={memoizedStyles.chatTitle}>💬 Live Chat</h3>
+                  <div style={memoizedStyles.onlineStatus}>
+                    <div style={memoizedStyles.onlineIndicator}></div>
+                    <span style={memoizedStyles.onlineText}>{onlineUsers} online</span>
                   </div>
                 </div>
-                {joinedRoom && (
-                  <div style={styles.roomInfo}>
-                    <span style={styles.roomLabel}>Room:</span>
-                    <span style={styles.roomId}>{joinedRoom}</span>
-                  </div>
-                )}
               </div>
               
-              <div style={memoizedStyles.chatBox}>
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      ...memoizedStyles.message,
-                      alignSelf: msg.sender === socket.id ? "flex-end" : "flex-start",
-                      background: msg.sender === socket.id 
-                        ? `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`
-                        : `linear-gradient(135deg, ${themeColors.background.paper}, rgba(255, 255, 255, 0.08))`,
-                      color: themeColors.text.primary,
-                      border: msg.sender === socket.id 
-                        ? `1px solid ${themeColors.primary.light}40`
-                        : `1px solid rgba(255, 255, 255, 0.15)`,
-                      boxShadow: msg.sender === socket.id
-                        ? `0 4px 15px ${themeColors.primary.main}25`
-                        : '0 4px 15px rgba(0, 0, 0, 0.15)',
-                    }}
-                  >
+              <div ref={chatContainerRef} style={memoizedStyles.messagesContainer}>
+                {messages.map((msg, index) => {
+                  const isOwnMessage = msg.name === user?.name || msg.senderUserName === user?.name;
+                  const isAnimated = messageAnimation === msg.id;
+                  
+                  return (
                     <div 
+                      key={msg.id || index} 
                       style={{
-                        ...memoizedStyles.messageSender,
-                        background: msg.sender === socket.id 
-                          ? `linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))`
-                          : `linear-gradient(135deg, ${themeColors.secondary.main}40, ${themeColors.secondary.dark}30)`,
-                        color: msg.sender === socket.id 
-                          ? 'rgba(255, 255, 255, 0.95)'
-                          : themeColors.secondary.light,
-                        border: msg.sender === socket.id
-                          ? '1px solid rgba(255, 255, 255, 0.3)'
-                          : `1px solid ${themeColors.secondary.main}50`,
+                        ...memoizedStyles.messageWrapper,
+                        justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
                       }}
                     >
-                      {msg.sender === socket.id ? '👤 You' : `👥 ${msg.senderUserName || "Unknown User"}`}
+                      {!isOwnMessage && msg.avatar && (
+                        <img 
+                          src={msg.avatar} 
+                          alt="Avatar" 
+                          style={memoizedStyles.messageAvatar}
+                        />
+                      )}
+                      <div 
+                        style={{
+                          ...memoizedStyles.messageBubble,
+                          ...(isOwnMessage ? memoizedStyles.ownMessage : memoizedStyles.otherMessage),
+                          ...(isAnimated ? memoizedStyles.newMessageAnimation : {})
+                        }}
+                      >
+                        {!isOwnMessage && (
+                          <div style={memoizedStyles.messageSender}>
+                            {msg.senderUserName || msg.name}
+                          </div>
+                        )}
+                        <div style={memoizedStyles.messageText}>
+                          {msg.text || msg.message}
+                        </div>
+                        <div style={memoizedStyles.messageTime}>
+                          {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'now'}
+                        </div>
+                      </div>
+                      {isOwnMessage && msg.avatar && (
+                        <img 
+                          src={msg.avatar} 
+                          alt="Avatar" 
+                          style={memoizedStyles.messageAvatar}
+                        />
+                      )}
                     </div>
-                    <div style={memoizedStyles.messageText}>
-                      {msg.text}
+                  );
+                })}
+                
+                {isTyping && (
+                  <div style={memoizedStyles.typingIndicator}>
+                    <div style={memoizedStyles.typingDots}>
+                      <span></span>
+                      <span></span>
+                      <span></span>
                     </div>
+                    <span style={memoizedStyles.typingText}>Someone is typing...</span>
                   </div>
-                ))}
+                )}
+                
+                <div ref={messagesEndRef} />
               </div>
               
-              <form style={memoizedStyles.chatForm} onSubmit={sendMessage}>
+              <form onSubmit={sendMessage} style={memoizedStyles.chatForm}>
                 <div style={memoizedStyles.inputContainer}>
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
+                  <TextField
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    style={memoizedStyles.chatInput}
+                    onChange={handleMessageChange}
+                    placeholder="Type your message..."
+                    style={memoizedStyles.messageInput}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage(e);
+                      }
+                    }}
                   />
-                  <button 
+                  <Button 
                     type="submit" 
                     style={memoizedStyles.sendButton}
+                    disabled={!newMessage.trim()}
                   >
                     🚀
-                  </button>
+                  </Button>
                 </div>
               </form>
             </Card>
@@ -443,7 +585,7 @@ const styles = {
     letterSpacing: '-0.01em',
   },
 
-  // Chat Section - Lightweight
+  // Chat Section - Enhanced Premium Design
   chatSection: {
     width: '100%',
   },
@@ -457,9 +599,42 @@ const styles = {
     padding: '0',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
     overflow: 'hidden',
-    height: 'clamp(350px, 45vh, 500px)',
+    height: 'clamp(400px, 50vh, 600px)',
     display: 'flex',
     flexDirection: 'column',
+  },
+
+  chatTitleContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+
+  onlineStatus: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 12px',
+    background: `linear-gradient(135deg, ${themeColors.success.main}15, rgba(255, 255, 255, 0.05))`,
+    border: `1px solid ${themeColors.success.main}25`,
+    borderRadius: '20px',
+  },
+
+  onlineIndicator: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: themeColors.success.main,
+    animation: 'pulse 2s infinite',
+  },
+
+  onlineText: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: themeColors.success.light,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
 
   // Coding Section - Lightweight
@@ -602,6 +777,129 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     wordWrap: 'break-word',
     whiteSpace: 'pre-wrap',
+  },
+
+  // Enhanced Message Bubble Styles
+  messagesContainer: {
+    flex: 1,
+    padding: 'clamp(12px, 2vw, 24px)',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'clamp(8px, 1.5vw, 16px)',
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01))`,
+    scrollBehavior: 'smooth',
+    className: 'messages-container',
+  },
+
+  messageWrapper: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: '8px',
+    margin: '4px 0',
+    animation: 'slideInMessage 0.3s ease-out',
+  },
+
+  messageBubble: {
+    maxWidth: '70%',
+    padding: '12px 16px',
+    borderRadius: '18px',
+    position: 'relative',
+    wordWrap: 'break-word',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  },
+
+  ownMessage: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    color: '#ffffff',
+    borderBottomRightRadius: '6px',
+  },
+
+  otherMessage: {
+    background: `linear-gradient(135deg, ${themeColors.background.paper}, rgba(255, 255, 255, 0.1))`,
+    color: themeColors.text.primary,
+    border: `1px solid rgba(255, 255, 255, 0.1)`,
+    borderBottomLeftRadius: '6px',
+  },
+
+  messageAvatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    border: `2px solid ${themeColors.primary.main}40`,
+  },
+
+  messageTime: {
+    fontSize: '10px',
+    opacity: 0.6,
+    marginTop: '4px',
+    textAlign: 'right',
+  },
+
+  newMessageAnimation: {
+    animation: 'messageGlow 1s ease-out',
+  },
+
+  typingIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))`,
+    borderRadius: '18px',
+    border: `1px solid rgba(255, 255, 255, 0.1)`,
+    maxWidth: '150px',
+  },
+
+  typingDots: {
+    display: 'flex',
+    gap: '3px',
+    className: 'typing-dots',
+  },
+
+  typingText: {
+    fontSize: '12px',
+    opacity: 0.7,
+    fontStyle: 'italic',
+  },
+
+  messageInput: {
+    flex: 1,
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
+    padding: '12px 16px',
+    color: themeColors.text.primary,
+    fontSize: '14px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    '::placeholder': {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+  },
+
+  sendButton: {
+    background: `linear-gradient(135deg, ${themeColors.primary.main}, ${themeColors.primary.dark})`,
+    border: 'none',
+    borderRadius: '12px',
+    padding: '10px 16px',
+    color: '#ffffff',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '50px',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 4px 12px ${themeColors.primary.main}40`,
+    },
+    '&:disabled': {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+      transform: 'none',
+    },
   },
 
   // Chat Form
