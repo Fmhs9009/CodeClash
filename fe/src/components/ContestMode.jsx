@@ -85,8 +85,13 @@ const ContestMode = () => {
     }
   };
 
-  // Assuming this function is used to send feedback
+  // Submit feedback (only contest creators can submit feedback)
   const submitFeedback = async (subID, logic, efficiency, codingStyle, clarity, custom) => {
+    if (!user?.email) {
+      alert('User authentication required. Please log in again.');
+      return;
+    }
+
     const feedback = {
       logic,
       efficiency,
@@ -94,8 +99,9 @@ const ContestMode = () => {
       clarity,
       custom,
     };
+    
     try {
-      await fetch(buildApiUrl('/feedback'), {
+      const response = await fetch(buildApiUrl('/feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,11 +110,26 @@ const ContestMode = () => {
           subID, // The ID of the submission you are updating
           feedback: feedback,
           name: user.name, // The reviewer's name who is submitting the feedback
+          userEmail: user.email, // User email for creator verification
         }),
       });
-      alert("Feedback Submitted");
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert("Feedback Submitted Successfully!");
+        // Refresh submissions to show updated feedback
+        fetchSubmissions();
+      } else {
+        if (response.status === 403) {
+          alert('Access Denied: Only contest creators can submit feedback.');
+        } else {
+          alert(result.msg || 'Failed to submit feedback. Please try again.');
+        }
+      }
     } catch (error) {
-      console.log(error);
+      console.log('Error submitting feedback:', error);
+      alert('Error submitting feedback. Please check your connection and try again.');
     }
   };
 
@@ -219,26 +240,41 @@ const ContestMode = () => {
         return;
       }
 
+      if (!user?.email) {
+        setError("User authentication required. Please log in again.");
+        return;
+      }
+
       setLoading(true);
       setError("");
       setSearchPerformed(true);
 
       try {
         const response = await fetch(
-          buildApiUrl(`/getSubmission?id=${contestId}`)
+          buildApiUrl(`/getSubmission?id=${contestId}&userEmail=${encodeURIComponent(user.email)}`)
         );
         const data = await response.json();
         
         if (response.ok) {
+          // Check if user is not the creator
+          if (data.isCreator === false) {
+            setError("Not reviewed yet. Only contest creators can view submissions before review.");
+            setSubmissions([]);
+            setPersistedSubmissions([]);
+            return;
+          }
+          
+          // If creator, show submissions
           setSubmissions(data.data || []);
           setPersistedSubmissions(data.data || []);
           setPersistedContestId(contestId);
           setPersistedSearchPerformed(true);
+          
           if (!data.data || data.data.length === 0) {
             setError("No submissions found for this contest ID.");
           }
         } else {
-          setError(data.message || "Contest not found or no submissions available.");
+          setError(data.msg || data.message || "Contest not found or no submissions available.");
           setSubmissions([]);
           setPersistedSubmissions([]);
         }
@@ -315,15 +351,25 @@ const ContestMode = () => {
 
           {/* Error Display */}
           {error && (
-            <div style={styles.errorSection}>
-              <div style={styles.errorIcon}>⚠️</div>
+            <div style={{
+              ...styles.errorSection,
+              ...(error.includes('Not reviewed yet') ? styles.accessRestrictedSection : {})
+            }}>
+              <div style={styles.errorIcon}>
+                {error.includes('Not reviewed yet') ? '🔒' : '⚠️'}
+              </div>
               <div style={styles.errorContent}>
                 <Typography variant="h6" style={styles.errorTitle}>
-                  Unable to Load Submissions
+                  {error.includes('Not reviewed yet') ? 'Access Restricted' : 'Unable to Load Submissions'}
                 </Typography>
                 <Typography variant="body2" style={styles.errorMessage}>
                   {error}
                 </Typography>
+                {error.includes('Not reviewed yet') && (
+                  <Typography variant="body2" style={styles.accessHint}>
+                    💡 Contest submissions are only visible to the contest creator until they have been reviewed.
+                  </Typography>
+                )}
               </div>
             </div>
           )}
@@ -2419,6 +2465,62 @@ const styles = {
     transform: 'translateY(-2px)',
     background: `linear-gradient(135deg, ${themeColors.background.glass}, rgba(255, 255, 255, 0.08))`,
     animation: 'focusPulse 2s ease-in-out',
+  },
+
+  // Error Section Styles
+  errorSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+    padding: '32px 48px',
+    background: `linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))`,
+    border: `1px solid rgba(239, 68, 68, 0.2)`,
+    borderRadius: '20px',
+    margin: '32px 48px',
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+  },
+
+  errorIcon: {
+    fontSize: '48px',
+    filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
+  },
+
+  errorContent: {
+    flex: 1,
+  },
+
+  errorTitle: {
+    color: '#ffffff',
+    fontSize: '20px',
+    fontWeight: 700,
+    marginBottom: '8px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  errorMessage: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '16px',
+    lineHeight: 1.5,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+
+  // Access Restricted Section (Special styling for non-creators)
+  accessRestrictedSection: {
+    background: `linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05))`,
+    border: `1px solid rgba(99, 102, 241, 0.3)`,
+  },
+
+  accessHint: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: '14px',
+    lineHeight: 1.5,
+    marginTop: '12px',
+    padding: '12px 16px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '12px',
+    border: `1px solid rgba(255, 255, 255, 0.1)`,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
 

@@ -1,4 +1,5 @@
 import Contest from "./../model/contest.js"
+import mongoose from "mongoose"
 
 
 
@@ -41,6 +42,22 @@ const postCreateContest=async (req,res)=>{
 const getGetContest=async (req,res)=>{
 
     const {id}=req.query;
+    
+    // Debug logging
+    console.log('🔍 getGetContest called with:');
+    console.log('- Contest ID:', id);
+    console.log('- ID type:', typeof id);
+    console.log('- Full query params:', req.query);
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        console.log('❌ Invalid ObjectId format:', id);
+        return res.status(400).json({
+            msg: "Invalid contest ID format",
+            receivedId: id
+        });
+    }
+    
 try{
     const details=await Contest.findById(id)
     if (!details) {

@@ -1,47 +1,48 @@
-// Modern theme configuration for CodeClash
+// theme.js - Enhanced consistent theme
 
 export const colors = {
   primary: {
-    main: '#4F46E5', // Indigo
-    light: '#818CF8',
-    dark: '#3730A3',
+    main: '#6366f1',
+    light: '#818cf8',
+    dark: '#4f46e5',
     contrastText: '#FFFFFF'
   },
   secondary: {
-    main: '#10B981', // Emerald
-    light: '#34D399',
-    dark: '#059669',
+    main: '#ec4899',
+    light: '#f472b6',
+    dark: '#db2777',
     contrastText: '#FFFFFF'
   },
   background: {
-    default: '#F9FAFB',
-    paper: '#FFFFFF',
+    default: '#0f0f23',
+    paper: '#1a1a2e',
+    glass: 'rgba(255, 255, 255, 0.1)',
     dark: '#111827'
   },
   text: {
-    primary: '#111827',
-    secondary: '#4B5563',
+    primary: '#ffffff',
+    secondary: '#a1a1aa',
     disabled: '#9CA3AF',
     hint: '#6B7280'
   },
   error: {
-    main: '#EF4444',
-    light: '#F87171',
-    dark: '#B91C1C'
+    main: '#ef4444',
+    light: '#f87171',
+    dark: '#dc2626'
   },
   warning: {
-    main: '#F59E0B',
-    light: '#FBBF24',
-    dark: '#D97706'
+    main: '#f59e0b',
+    light: '#fbbf24',
+    dark: '#d97706'
   },
   info: {
-    main: '#3B82F6',
-    light: '#60A5FA',
-    dark: '#2563EB'
+    main: '#3b82f6',
+    light: '#60a5fa',
+    dark: '#2563eb'
   },
   success: {
-    main: '#10B981',
-    light: '#34D399',
+    main: '#10b981',
+    light: '#34d399',
     dark: '#059669'
   },
   grey: {
@@ -59,12 +60,29 @@ export const colors = {
 };
 
 export const typography = {
-  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   fontSize: 16,
   fontWeightLight: 300,
   fontWeightRegular: 400,
   fontWeightMedium: 500,
   fontWeightBold: 700,
+  fontWeight: {
+    light: 300,
+    regular: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+    extrabold: 800
+  },
+  fontSize: {
+    xs: '12px',
+    sm: '14px',
+    md: '16px',
+    lg: '18px',
+    xl: '20px',
+    xxl: '24px',
+    xxxl: '32px'
+  },
   h1: {
     fontSize: '2.5rem',
     fontWeight: 700,
@@ -111,11 +129,16 @@ export const typography = {
 };
 
 export const shadows = {
-  small: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  medium: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-  large: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+  small: '0 2px 8px rgba(0, 0, 0, 0.25)',
+  medium: '0 4px 16px rgba(0, 0, 0, 0.2)',
+  large: '0 8px 32px rgba(0, 0, 0, 0.3)',
   xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  glow: {
+    primary: '0 0 20px rgba(99, 102, 241, 0.5)',
+    success: '0 0 20px rgba(16, 185, 129, 0.5)',
+    error: '0 0 20px rgba(239, 68, 68, 0.5)'
+  }
 };
 
 export const spacing = (factor) => `${0.25 * factor}rem`;

@@ -56,13 +56,35 @@ io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log(`🔌 USER DISCONNECTED: ${socket.id}`);
+        
+        // Update user count in the room they were in
+        if (socket.data.roomid) {
+            const roomid = socket.data.roomid;
+            const roomUsers = io.sockets.adapter.rooms.get(roomid);
+            const userCount = roomUsers ? roomUsers.size : 0;
+            
+            console.log(`📡 Updating user count for room ${roomid}: ${userCount}`);
+            console.log(`   Remaining users:`, Array.from(roomUsers || []));
+            
+            io.to(roomid).emit('room-users-count', userCount);
+        } else {
+            console.log(`   User was not in any room`);
+        }
     });
 
     socket.on('join-room', (roomid) => {
         socket.join(roomid);
         socket.data.roomid = roomid;
-        console.log(`${socket.id} joined room ${roomid}`);
+        
+        // Get updated user count
+        const roomUsers = io.sockets.adapter.rooms.get(roomid);
+        const userCount = roomUsers ? roomUsers.size : 0;
+        
+        console.log(`🔗 User ${socket.id} joined room ${roomid} (${userCount} users)`);
+        
+        // Send updated user count to all users in the room
+        io.to(roomid).emit('room-users-count', userCount);
     });
 
     socket.on('update-code', ({ NewCode, roomid }) => {
@@ -88,25 +110,68 @@ io.on('connection', (socket) => {
         socket.to(roomid).emit("send-language", language);
       });
 
-    socket.on("send-message", ({ message, roomid ,senderUserName}) => {
+    // Handle message sending
+    socket.on("send-message", (messageData) => {
+        const roomid = messageData.roomid;
+        const messageText = messageData.message;
+        const userName = messageData.name;
+        const messageId = messageData.id;
+        const timestamp = messageData.timestamp;
+        const avatar = messageData.avatar;
+        
+        // Auto-join room if user is not in any room but trying to send message
+        if (!socket.data.roomid && roomid) {
+            socket.join(roomid);
+            socket.data.roomid = roomid;
+            
+            // Send updated user count
+            const roomUsers = io.sockets.adapter.rooms.get(roomid);
+            const userCount = roomUsers ? roomUsers.size : 0;
+            io.to(roomid).emit('room-users-count', userCount);
+        }
+        
         if (socket.data.roomid === roomid) {
-          const fullMessage = {
-            text: message.text,
-            sender: socket.id, // Include sender's ID
-            senderUserName,
+          const broadcastMessage = {
+            id: messageId || Date.now(),
+            message: messageText,
+            text: messageText, // For backward compatibility
+            name: userName,
+            senderUserName: userName, // For backward compatibility
+            sender: socket.id,
+            roomid: roomid,
+            timestamp: timestamp || new Date().toISOString(),
+            avatar: avatar || null
           };
-          socket.to(roomid).emit("receive-message", fullMessage); // Broadcast to other clients in the room
-          console.log(`Message sended in room ${roomid}:`, fullMessage );
-        } else {
-          console.warn(`Socket ${socket.id} tried to send a message to an invalid room. ${roomid}`);
+          
+          socket.to(roomid).emit("receive-message", broadcastMessage);
         }
       });
       
+    // Handle typing indicators
+    socket.on('typing', ({ name, roomid }) => {
+        if (socket.data.roomid === roomid) {
+            socket.to(roomid).emit('user-typing', { name, roomid });
+            console.log(`${name} is typing in room ${roomid}`);
+        }
+    });
 
     socket.on('disconnect-room', (roomid) => {
         socket.leave(roomid);
         socket.data.roomid = null;
-        console.log(`${socket.id} left room ${roomid}`);
+        
+        // Get updated user count after leaving
+        const roomUsers = io.sockets.adapter.rooms.get(roomid);
+        const userCount = roomUsers ? roomUsers.size : 0;
+        
+        console.log(`🔗 USER LEFT ROOM:`);
+        console.log(`   Socket: ${socket.id}`);
+        console.log(`   Room: ${roomid}`);
+        console.log(`   Remaining users: ${userCount}`);
+        console.log(`   Room users:`, Array.from(roomUsers || []));
+        
+        // Send updated user count to remaining users in the room
+        io.to(roomid).emit('room-users-count', userCount);
+        console.log(`📡 Sent updated user count ${userCount} to room ${roomid}`);
     });
 });
 

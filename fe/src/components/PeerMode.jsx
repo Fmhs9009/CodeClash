@@ -215,13 +215,19 @@ const PeerMode = () => {
     };
   }, [user?.name, playMessageSound, scrollToBottom]);
 
-  // Handle typing indicator
+  // Handle typing indicator with throttling
+  const lastTypingTime = useRef(0);
   const handleTyping = useCallback(() => {
     if (roomid && user?.name) {
-      socket.emit("typing", {
-        name: user.name,
-        roomid: roomid
-      });
+      const now = Date.now();
+      // Only emit typing event every 1 second to reduce spam
+      if (now - lastTypingTime.current > 1000) {
+        socket.emit("typing", {
+          name: user.name,
+          roomid: roomid
+        });
+        lastTypingTime.current = now;
+      }
     }
   }, [roomid, user?.name]);
 
@@ -254,7 +260,7 @@ const PeerMode = () => {
       // Auto-scroll after sending
       setTimeout(scrollToBottom, 100);
     },
-    [socket, newMessage, roomid, user.name]
+    [newMessage, roomid, user.name, user.picture, scrollToBottom]
   );
 
   // Room connection functions
@@ -265,7 +271,6 @@ const PeerMode = () => {
       return;
     }
 
-    console.log("Joining room:", roomid);
     socket.emit("join-room", roomid);
     setJoinedRoom(roomid);
     setIsRoomJoined(true);
@@ -339,7 +344,7 @@ const PeerMode = () => {
                 </div>
               </div>
               
-              <div ref={chatContainerRef} style={memoizedStyles.messagesContainer}>
+              <div ref={chatContainerRef} className="messages-container" style={memoizedStyles.messagesContainer}>
                 {messages.map((msg, index) => {
                   const isOwnMessage = msg.name === user?.name || msg.senderUserName === user?.name;
                   const isAnimated = messageAnimation === msg.id;
@@ -368,14 +373,14 @@ const PeerMode = () => {
                       >
                         {!isOwnMessage && (
                           <div style={memoizedStyles.messageSender}>
-                            {msg.senderUserName || msg.name}
+                            {msg.name || msg.senderUserName || 'Unknown User'}
                           </div>
                         )}
                         <div style={memoizedStyles.messageText}>
-                          {msg.text || msg.message}
+                          {msg.message || msg.text || 'No message'}
                         </div>
                         <div style={memoizedStyles.messageTime}>
-                          {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'now'}
+                          {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                       </div>
                       {isOwnMessage && msg.avatar && (
@@ -391,7 +396,7 @@ const PeerMode = () => {
                 
                 {isTyping && (
                   <div style={memoizedStyles.typingIndicator}>
-                    <div style={memoizedStyles.typingDots}>
+                    <div className="typing-dots" style={memoizedStyles.typingDots}>
                       <span></span>
                       <span></span>
                       <span></span>
@@ -540,21 +545,28 @@ const styles = {
     margin: '0 auto',
   },
 
-  // Content Layout - Lightweight
+  // Content Layout - Improved with Grid for better alignment
   content: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 600px), 1fr))',
     gap: 'clamp(24px, 4vw, 40px)',
-    // Responsive design handled by CSS Grid
+    width: '100%',
+    margin: '0 auto',
   },
 
-  // Section Styles - Unified for all three sections
+  // Section Styles - Unified for all three sections with improved alignment
   roomConnectionSection: {
     width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
 
   codeEditorSection: {
     width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
 
   sectionCard: {
@@ -789,7 +801,6 @@ const styles = {
     gap: 'clamp(8px, 1.5vw, 16px)',
     background: `linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01))`,
     scrollBehavior: 'smooth',
-    className: 'messages-container',
   },
 
   messageWrapper: {
@@ -855,7 +866,6 @@ const styles = {
   typingDots: {
     display: 'flex',
     gap: '3px',
-    className: 'typing-dots',
   },
 
   typingText: {

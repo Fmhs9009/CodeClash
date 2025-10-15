@@ -42,9 +42,21 @@ const themeColors = {
 };
 
 const CollaborativeCodeEditor = ({ roomid, joinedRoom }) => {
-  const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("");
-  const [id, setId] = useState(0);
+  const [code, setCode] = useState(`// Welcome to CodeClash Collaborative Editor
+// Start coding here...
+
+function helloWorld() {
+  console.log("Hello, World!");
+  return "Hello, World!";
+}
+
+// You can write your code in JavaScript, Python, C++, or Java
+// Select your preferred language from the dropdown below
+// Happy coding!
+
+`);
+  const [language, setLanguage] = useState("javascript");
+  const [id, setId] = useState(63); // Default to JavaScript
   const [stdOutput, setStdOutput] = useState("");
   const [stdInput, setStdInput] = useState("");
   const [isCodeRunning, setIsCodeRunning] = useState(false);
@@ -143,8 +155,33 @@ const CollaborativeCodeEditor = ({ roomid, joinedRoom }) => {
     }
   }, [language]);
 
+  // Memoized styles for better performance
+  const responsiveStyles = useMemo(() => ({
+    cardWrapper: {
+      ...styles.cardWrapper,
+      maxWidth: '100%',
+      margin: '0 auto',
+    },
+    ioGrid: {
+      ...styles.ioGrid,
+      gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr',
+      gap: window.innerWidth < 768 ? '16px' : 'clamp(12px, 2vw, 24px)',
+    },
+    editorControlsBar: {
+      ...styles.editorControlsBar,
+      flexDirection: window.innerWidth < 576 ? 'column' : 'row',
+      alignItems: window.innerWidth < 576 ? 'flex-start' : 'center',
+      gap: window.innerWidth < 576 ? '12px' : '0',
+    },
+    languageControlGroup: {
+      ...styles.languageControlGroup,
+      flexWrap: 'wrap',
+      marginBottom: window.innerWidth < 576 ? '8px' : '0',
+    },
+  }), [styles]);
+
   return (
-    <Card variant="outlined" style={styles.cardWrapper}>
+    <Card variant="outlined" style={responsiveStyles.cardWrapper}>
       <div style={styles.container}>
       {/* Code Editor Section */}
       <div style={styles.codeSection}>
@@ -156,8 +193,8 @@ const CollaborativeCodeEditor = ({ roomid, joinedRoom }) => {
         </div>
         
         {/* Editor Controls Bar */}
-        <div style={styles.editorControlsBar}>
-          <div style={styles.languageControlGroup}>
+        <div style={responsiveStyles.editorControlsBar}>
+          <div style={responsiveStyles.languageControlGroup}>
             <label style={styles.controlLabel}>Language:</label>
             <Select
               value={language}
@@ -223,7 +260,7 @@ const CollaborativeCodeEditor = ({ roomid, joinedRoom }) => {
 
       {/* Input/Output Section */}
       <div style={styles.ioSection}>
-        <div style={styles.ioGrid}>
+        <div style={responsiveStyles.ioGrid}>
           {/* Input Panel */}
           <div style={styles.inputPanel}>
             <div style={styles.panelHeader}>
